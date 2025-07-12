@@ -1,139 +1,151 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import ReceiptUpload from './components/ReceiptUpload';
 import ExpenseView from './components/ExpenseView';
-import { mockExpense } from './data/mockData';
 import { Expense, Item } from './types';
+import { getExpense, createExpense, updateExpenseItems, updateExpenseTaxTip, claimItem } from './api/expenses';
+
+// Component to handle expense loading and display
+const ExpensePage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [expense, setExpense] = useState<Expense | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadExpense = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const loadedExpense = await getExpense(id);
+        setExpense(loadedExpense);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load expense');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExpense();
+  }, [id]);
+
+  const handleItemClaimed = async (itemId: string, personName: string) => {
+    if (!expense) return;
+
+    try {
+      const updatedExpense = await claimItem(expense.id, itemId, personName);
+      setExpense(updatedExpense);
+    } catch (err) {
+      console.error('Failed to claim item:', err);
+      // Could show a toast notification here
+    }
+  };
+
+  const handleItemsUpdated = async (updatedItems: Item[]) => {
+    if (!expense) return;
+
+    try {
+      const updatedExpense = await updateExpenseItems(expense.id, updatedItems);
+      setExpense(updatedExpense);
+    } catch (err) {
+      console.error('Failed to update items:', err);
+    }
+  };
+
+  const handleTaxTipUpdated = async (tax: number, tip: number) => {
+    if (!expense) return;
+
+    try {
+      const updatedExpense = await updateExpenseTaxTip(expense.id, tax, tip);
+      setExpense(updatedExpense);
+    } catch (err) {
+      console.error('Failed to update tax/tip:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading expense...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!expense) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Expense not found</p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ExpenseView 
+      expense={expense} 
+      onItemClaimed={handleItemClaimed}
+      onItemsUpdated={handleItemsUpdated}
+      onTaxTipUpdated={handleTaxTipUpdated}
+    />
+  );
+};
+
+// Component to handle expense creation
+const CreateExpensePage: React.FC = () => {
+  const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
+
+  const handleExpenseCreated = async (expenseId: string) => {
+    setCreating(true);
+    // Use React Router navigation instead of window.location.href
+    navigate(`/expense/${expenseId}`);
+  };
+
+  return (
+    <ReceiptUpload onExpenseCreated={handleExpenseCreated} />
+  );
+};
 
 function App() {
-  const [currentExpense, setCurrentExpense] = useState<Expense | null>(null);
-
-  const handleExpenseCreated = (expenseId: string) => {
-    // In real app, this would fetch the expense from the API
-    setCurrentExpense(mockExpense);
-  };
-
-  const handleItemClaimed = (itemId: string, personName: string) => {
-    if (!currentExpense) return;
-
-    // Mock item claiming - in real app, this would call the API
-    const updatedExpense = {
-      ...currentExpense,
-      items: currentExpense.items.map(item =>
-        item.id === itemId
-          ? { ...item, claimedBy: [...item.claimedBy, personName] }
-          : item
-      )
-    };
-
-    // Recalculate amounts with tax and tip splitting
-    const updatedPeople = recalculateSplits(updatedExpense);
-    setCurrentExpense({
-      ...updatedExpense,
-      people: updatedPeople
-    });
-  };
-
-  const handleItemsUpdated = (updatedItems: Item[]) => {
-    if (!currentExpense) return;
-
-    // Mock items update - in real app, this would call the API
-    const updatedExpense = {
-      ...currentExpense,
-      items: updatedItems,
-      subtotal: updatedItems.reduce((sum, item) => sum + item.price, 0)
-    };
-
-    // Recalculate amounts for all people
-    const updatedPeople = recalculateSplits(updatedExpense);
-    setCurrentExpense({
-      ...updatedExpense,
-      people: updatedPeople
-    });
-  };
-
-  const handleTaxTipUpdated = (tax: number, tip: number) => {
-    if (!currentExpense) return;
-
-    // Mock tax/tip update - in real app, this would call the API
-    const updatedExpense = {
-      ...currentExpense,
-      tax,
-      tip,
-      totalAmount: currentExpense.subtotal + tax + tip
-    };
-
-    // Recalculate amounts for all people
-    const updatedPeople = recalculateSplits(updatedExpense);
-    setCurrentExpense({
-      ...updatedExpense,
-      people: updatedPeople
-    });
-  };
-
-  const recalculateSplits = (expense: Expense) => {
-    const subtotal = expense.items.reduce((sum, item) => sum + item.price, 0);
-    
-    return expense.people.map(person => {
-      // Calculate person's subtotal from claimed items
-      const claimedItems = expense.items.filter(item =>
-        item.claimedBy.includes(person.name)
-      );
-      const personSubtotal = claimedItems.reduce((sum, item) => {
-        return sum + (item.price / item.claimedBy.length);
-      }, 0);
-
-      // Calculate percentage of total (for tax and tip splitting)
-      const percentage = subtotal > 0 ? personSubtotal / subtotal : 0;
-      
-      // Calculate tax and tip shares based on percentage
-      const taxShare = expense.tax * percentage;
-      const tipShare = expense.tip * percentage;
-      
-      // Calculate total owed
-      const totalOwed = personSubtotal + taxShare + tipShare;
-
-      return {
-        ...person,
-        subtotal: personSubtotal,
-        taxShare,
-        tipShare,
-        totalOwed,
-        amountOwed: personSubtotal // Keep for backward compatibility
-      };
-    });
-  };
-
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 py-8">
         <Routes>
           <Route 
             path="/" 
-            element={
-              currentExpense ? (
-                <Navigate to={`/expense/${currentExpense.id}`} replace />
-              ) : (
-                <ReceiptUpload onExpenseCreated={handleExpenseCreated} />
-              )
-            } 
+            element={<CreateExpensePage />}
           />
           <Route 
             path="/expense/:id" 
-            element={
-              currentExpense ? (
-                <ExpenseView 
-                  expense={currentExpense} 
-                  onItemClaimed={handleItemClaimed}
-                  onItemsUpdated={handleItemsUpdated}
-                  onTaxTipUpdated={handleTaxTipUpdated}
-                />
-              ) : (
-                <div className="text-center">
-                  <p>Loading expense...</p>
-                </div>
-              )
-            } 
+            element={<ExpensePage />}
           />
         </Routes>
       </div>

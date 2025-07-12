@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createExpense } from '../api/expenses';
 
 interface ReceiptUploadProps {
   onExpenseCreated: (expenseId: string) => void;
@@ -14,12 +15,63 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
 
     setIsUploading(true);
     
-    // Mock API call - replace with actual backend call
-    setTimeout(() => {
-      const mockExpenseId = 'exp-' + Math.random().toString(36).substr(2, 9);
-      onExpenseCreated(mockExpenseId);
+    try {
+      // Mock expense creation - in real app, this would process the receipt with AI
+      const mockExpenseData = {
+        payerName: payerName.trim(),
+        totalAmount: 85.50,
+        subtotal: 75.50,
+        tax: 6.04,
+        tip: 4.00,
+        items: [
+          {
+            id: 'item-1',
+            name: 'Margherita Pizza',
+            price: 18.00,
+            claimedBy: []
+          },
+          {
+            id: 'item-2',
+            name: 'Caesar Salad',
+            price: 12.50,
+            claimedBy: []
+          },
+          {
+            id: 'item-3',
+            name: 'Pasta Carbonara',
+            price: 16.00,
+            claimedBy: []
+          },
+          {
+            id: 'item-4',
+            name: 'Garlic Bread',
+            price: 6.00,
+            claimedBy: []
+          },
+          {
+            id: 'item-5',
+            name: 'Tiramisu',
+            price: 8.00,
+            claimedBy: []
+          },
+          {
+            id: 'item-6',
+            name: 'Soft Drinks',
+            price: 15.00,
+            claimedBy: []
+          }
+        ],
+        people: []
+      };
+
+      const newExpense = await createExpense(mockExpenseData);
+      onExpenseCreated(newExpense.id);
+    } catch (error) {
+      console.error('Failed to create expense:', error);
+      // Could show an error message to the user here
+    } finally {
       setIsUploading(false);
-    }, 2000);
+    }
   };
 
   return (
