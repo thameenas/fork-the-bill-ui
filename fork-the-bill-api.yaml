@@ -1,0 +1,241 @@
+openapi: 3.0.3
+info:
+  title: Fork the Bill API
+  version: 1.0.0
+  description: API for anonymous, account-free, itemized bill splitting with human-friendly shareable links.
+
+servers:
+  - url: https://yourdomain.com/api
+
+paths:
+  /expenses:
+    post:
+      summary: Create a new expense (bill)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreate'
+      responses:
+        '201':
+          description: Expense created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+  /expenses/{slug}:
+    get:
+      summary: Get an expense by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expense found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '404':
+          description: Not found
+
+    put:
+      summary: Update an expense (edit items, tax, tip, etc.)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseUpdate'
+      responses:
+        '200':
+          description: Expense updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+    delete:
+      summary: Delete an expense (optional, for admin/testing)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+  /expenses/{slug}/claim:
+    post:
+      summary: Claim or unclaim an item for a person
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                personName:
+                  type: string
+                itemId:
+                  type: string
+                action:
+                  type: string
+                  enum: [claim, unclaim]
+      responses:
+        '200':
+          description: Updated expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+  /expenses/{slug}/finish:
+    post:
+      summary: Mark a person as finished or pending
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                personName:
+                  type: string
+                isFinished:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+components:
+  schemas:
+    ExpenseCreate:
+      type: object
+      properties:
+        payerName:
+          type: string
+        totalAmount:
+          type: number
+        subtotal:
+          type: number
+        tax:
+          type: number
+        tip:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+    ExpenseUpdate:
+      type: object
+      properties:
+        payerName:
+          type: string
+        totalAmount:
+          type: number
+        subtotal:
+          type: number
+        tax:
+          type: number
+        tip:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        payerName:
+          type: string
+        totalAmount:
+          type: number
+        subtotal:
+          type: number
+        tax:
+          type: number
+        tip:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        claimedBy:
+          type: array
+          items:
+            type: string
+    Person:
+      type: object
+      properties:
+        name:
+          type: string
+        itemsClaimed:
+          type: array
+          items:
+            type: string
+        amountOwed:
+          type: number
+        subtotal:
+          type: number
+        taxShare:
+          type: number
+        tipShare:
+          type: number
+        totalOwed:
+          type: number
+        isFinished:
+          type: boolean 
