@@ -59,13 +59,3 @@ A modern, anonymous, itemized bill-splitting app inspired by Splitwise. Fork the
 - See [`context.md`](./context.md) for project goals, data model, and design decisions
 - Backend will provide stateless, anonymous REST endpoints (see OpenAPI spec)
 
----
-
-## 🤝 Contributing
-- PRs and issues welcome!
-- See `context.md` for project background and design philosophy
-
----
-
-## 📄 License
-MIT 
