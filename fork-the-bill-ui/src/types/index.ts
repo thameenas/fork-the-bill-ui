@@ -9,6 +9,10 @@ export interface Person {
   name: string;
   itemsClaimed: string[];
   amountOwed: number;
+  subtotal: number;
+  taxShare: number;
+  tipShare: number;
+  totalOwed: number;
 }
 
 export interface Expense {
@@ -16,6 +20,9 @@ export interface Expense {
   createdAt: string;
   payerName: string;
   totalAmount: number;
+  subtotal: number;
+  tax: number;
+  tip: number;
   items: Item[];
   people: Person[];
 }

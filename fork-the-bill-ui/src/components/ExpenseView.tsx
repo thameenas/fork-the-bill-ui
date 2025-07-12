@@ -6,9 +6,10 @@ interface ExpenseViewProps {
   expense: Expense;
   onItemClaimed: (itemId: string, personName: string) => void;
   onItemsUpdated?: (items: Item[]) => void;
+  onTaxTipUpdated?: (tax: number, tip: number) => void;
 }
 
-const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onItemsUpdated }) => {
+const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onItemsUpdated, onTaxTipUpdated }) => {
   const [selectedPerson, setSelectedPerson] = useState('');
   const [showQR, setShowQR] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -17,6 +18,8 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   const [newItemPrice, setNewItemPrice] = useState('');
   const [isClaiming, setIsClaiming] = useState<string | null>(null);
   const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>(expense.items);
+  const [editingTax, setEditingTax] = useState(expense.tax);
+  const [editingTip, setEditingTip] = useState(expense.tip);
 
   // Mock real-time updates - simulates other users claiming items
   useEffect(() => {
@@ -99,12 +102,17 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     if (onItemsUpdated) {
       onItemsUpdated(editingItems);
     }
+    if (onTaxTipUpdated) {
+      onTaxTipUpdated(editingTax, editingTip);
+    }
     setRealTimeUpdates(editingItems);
     setIsEditMode(false);
   };
 
   const handleCancelEdit = () => {
     setEditingItems(expense.items);
+    setEditingTax(expense.tax);
+    setEditingTip(expense.tip);
     setIsEditMode(false);
   };
 
@@ -114,7 +122,8 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   };
 
   const shareUrl = `${window.location.origin}/expense/${expense.id}`;
-  const totalAmount = displayItems.reduce((sum, item) => sum + item.price, 0);
+  const subtotal = displayItems.reduce((sum, item) => sum + item.price, 0);
+  const totalAmount = subtotal + editingTax + editingTip;
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
@@ -123,9 +132,12 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
         <div className="flex-1">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Restaurant Bill</h2>
           <p className="text-gray-600 text-sm sm:text-base">Paid by {expense.payerName}</p>
-          <p className="text-sm text-gray-500">
-            Total: ${totalAmount.toFixed(2)}
-          </p>
+          <div className="text-sm text-gray-500 space-y-1">
+            <p>Subtotal: ${subtotal.toFixed(2)}</p>
+            <p>Tax: ${editingTax.toFixed(2)}</p>
+            <p>Tip: ${editingTip.toFixed(2)}</p>
+            <p className="font-semibold">Total: ${totalAmount.toFixed(2)}</p>
+          </div>
           {!isEditMode && (
             <p className="text-xs text-green-600 mt-1">
               🔴 Live updates enabled
@@ -168,7 +180,37 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       {/* Edit Mode - Mobile optimized */}
       {isEditMode && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Edit Items</h3>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Edit Items & Tax/Tip</h3>
+          
+          {/* Tax and Tip editing */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tax Amount
+              </label>
+              <input
+                type="number"
+                value={editingTax}
+                onChange={(e) => setEditingTax(parseFloat(e.target.value) || 0)}
+                step="0.01"
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tip Amount
+              </label>
+              <input
+                type="number"
+                value={editingTip}
+                onChange={(e) => setEditingTip(parseFloat(e.target.value) || 0)}
+                step="0.01"
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
           
           {/* Add new item form - Mobile optimized */}
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -333,13 +375,29 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       {/* Split Summary - Mobile optimized */}
       <div className="mt-8 p-4 bg-gray-50 rounded-lg">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Split Summary</h3>
-        <div className="space-y-2">
+        <div className="space-y-4">
           {expense.people.map((person) => (
-            <div key={person.name} className="flex justify-between items-center">
-              <span className="font-medium">{person.name}</span>
-              <span className="text-lg font-semibold">
-                ${person.amountOwed.toFixed(2)}
-              </span>
+            <div key={person.name} className="border-b border-gray-200 pb-3 last:border-b-0">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium text-lg">{person.name}</span>
+                <span className="text-lg font-semibold text-blue-600">
+                  ${person.totalOwed.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div className="flex justify-between">
+                  <span>Items:</span>
+                  <span>${person.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
+                  <span>${person.taxShare.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tip ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
+                  <span>${person.tipShare.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
           ))}
         </div>

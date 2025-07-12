@@ -26,17 +26,8 @@ function App() {
       )
     };
 
-    // Recalculate amounts (simplified - in real app, this would be done on the backend)
-    const updatedPeople = updatedExpense.people.map(person => {
-      const claimedItems = updatedExpense.items.filter(item =>
-        item.claimedBy.includes(person.name)
-      );
-      const amountOwed = claimedItems.reduce((sum, item) => {
-        return sum + (item.price / item.claimedBy.length);
-      }, 0);
-      return { ...person, amountOwed };
-    });
-
+    // Recalculate amounts with tax and tip splitting
+    const updatedPeople = recalculateSplits(updatedExpense);
     setCurrentExpense({
       ...updatedExpense,
       people: updatedPeople
@@ -50,23 +41,66 @@ function App() {
     const updatedExpense = {
       ...currentExpense,
       items: updatedItems,
-      totalAmount: updatedItems.reduce((sum, item) => sum + item.price, 0)
+      subtotal: updatedItems.reduce((sum, item) => sum + item.price, 0)
     };
 
     // Recalculate amounts for all people
-    const updatedPeople = updatedExpense.people.map(person => {
-      const claimedItems = updatedItems.filter(item =>
-        item.claimedBy.includes(person.name)
-      );
-      const amountOwed = claimedItems.reduce((sum, item) => {
-        return sum + (item.price / item.claimedBy.length);
-      }, 0);
-      return { ...person, amountOwed };
-    });
-
+    const updatedPeople = recalculateSplits(updatedExpense);
     setCurrentExpense({
       ...updatedExpense,
       people: updatedPeople
+    });
+  };
+
+  const handleTaxTipUpdated = (tax: number, tip: number) => {
+    if (!currentExpense) return;
+
+    // Mock tax/tip update - in real app, this would call the API
+    const updatedExpense = {
+      ...currentExpense,
+      tax,
+      tip,
+      totalAmount: currentExpense.subtotal + tax + tip
+    };
+
+    // Recalculate amounts for all people
+    const updatedPeople = recalculateSplits(updatedExpense);
+    setCurrentExpense({
+      ...updatedExpense,
+      people: updatedPeople
+    });
+  };
+
+  const recalculateSplits = (expense: Expense) => {
+    const subtotal = expense.items.reduce((sum, item) => sum + item.price, 0);
+    
+    return expense.people.map(person => {
+      // Calculate person's subtotal from claimed items
+      const claimedItems = expense.items.filter(item =>
+        item.claimedBy.includes(person.name)
+      );
+      const personSubtotal = claimedItems.reduce((sum, item) => {
+        return sum + (item.price / item.claimedBy.length);
+      }, 0);
+
+      // Calculate percentage of total (for tax and tip splitting)
+      const percentage = subtotal > 0 ? personSubtotal / subtotal : 0;
+      
+      // Calculate tax and tip shares based on percentage
+      const taxShare = expense.tax * percentage;
+      const tipShare = expense.tip * percentage;
+      
+      // Calculate total owed
+      const totalOwed = personSubtotal + taxShare + tipShare;
+
+      return {
+        ...person,
+        subtotal: personSubtotal,
+        taxShare,
+        tipShare,
+        totalOwed,
+        amountOwed: personSubtotal // Keep for backward compatibility
+      };
     });
   };
 
@@ -92,6 +126,7 @@ function App() {
                   expense={currentExpense} 
                   onItemClaimed={handleItemClaimed}
                   onItemsUpdated={handleItemsUpdated}
+                  onTaxTipUpdated={handleTaxTipUpdated}
                 />
               ) : (
                 <div className="text-center">
