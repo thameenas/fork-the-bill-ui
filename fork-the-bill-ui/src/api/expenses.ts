@@ -1,5 +1,20 @@
 import { Expense, Item } from '../types';
 import { getMockExpenses, setMockExpenses } from './mockData';
+import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
+
+// Helper to generate a unique, human-friendly slug
+function generateUniqueSlug(existingSlugs: string[]): string {
+  let slug;
+  do {
+    slug = uniqueNamesGenerator({
+      dictionaries: [adjectives, colors, animals],
+      separator: '-',
+      length: 3,
+      style: 'lowerCase',
+    });
+  } while (existingSlugs.includes(slug));
+  return slug;
+}
 
 // Helper function to recalculate splits (same logic as in App.tsx)
 const recalculateSplits = (expense: Expense) => {
@@ -38,12 +53,13 @@ const recalculateSplits = (expense: Expense) => {
 
 // API Service Functions with Mock Implementations
 
-export const getExpense = async (id: string): Promise<Expense> => {
+export const getExpense = async (slugOrId: string): Promise<Expense> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
   const expenses = getMockExpenses();
-  const expense = expenses.find(e => e.id === id);
+  // Try to find by slug first, then by id for backward compatibility
+  const expense = expenses.find(e => e.slug === slugOrId || e.id === slugOrId);
   
   if (!expense) {
     throw new Error('Expense not found');
@@ -56,8 +72,13 @@ export const createExpense = async (expenseData: Partial<Expense>): Promise<Expe
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
+  const expenses = getMockExpenses();
+  const existingSlugs = expenses.map(e => e.slug).filter((s): s is string => Boolean(s));
+  const slug = generateUniqueSlug(existingSlugs);
+
   const newExpense: Expense = {
     id: `exp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    slug,
     createdAt: new Date().toISOString(),
     payerName: expenseData.payerName || 'Unknown',
     totalAmount: expenseData.totalAmount || 0,
@@ -68,7 +89,6 @@ export const createExpense = async (expenseData: Partial<Expense>): Promise<Expe
     people: expenseData.people || []
   };
   
-  const expenses = getMockExpenses();
   expenses.push(newExpense);
   setMockExpenses(expenses);
   

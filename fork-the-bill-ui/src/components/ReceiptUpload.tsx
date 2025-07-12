@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createExpense } from '../api/expenses';
 
 interface ReceiptUploadProps {
-  onExpenseCreated: (expenseId: string) => void;
+  onExpenseCreated: (slug: string) => void;
 }
 
 const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
@@ -76,7 +76,7 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
       };
 
       const newExpense = await createExpense(mockExpenseData);
-      onExpenseCreated(newExpense.id);
+      onExpenseCreated(newExpense.slug || newExpense.id);
     } catch (error) {
       console.error('Failed to create expense:', error);
       // Could show an error message to the user here

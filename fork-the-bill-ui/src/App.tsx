@@ -7,7 +7,7 @@ import { getExpense, updateExpenseItems, updateExpenseTaxTip, claimItem, updateP
 
 // Component to handle expense loading and display
 const ExpensePage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [expense, setExpense] = useState<Expense | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,12 +15,12 @@ const ExpensePage: React.FC = () => {
   // Load expense data
   useEffect(() => {
     const loadExpense = async () => {
-      if (!id) return;
+      if (!slug) return;
       
       try {
         setLoading(true);
         setError(null);
-        const loadedExpense = await getExpense(id);
+        const loadedExpense = await getExpense(slug);
         setExpense(loadedExpense);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load expense');
@@ -30,7 +30,7 @@ const ExpensePage: React.FC = () => {
     };
 
     loadExpense();
-  }, [id]);
+  }, [slug]);
 
   // Handle item claiming
   const handleItemClaimed = async (itemId: string, personName: string) => {
@@ -148,9 +148,9 @@ const ExpensePage: React.FC = () => {
 const CreateExpensePage: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleExpenseCreated = async (expenseId: string) => {
+  const handleExpenseCreated = async (slug: string) => {
     // Use React Router navigation instead of window.location.href
-    navigate(`/expense/${expenseId}`);
+    navigate(`/${slug}`);
   };
 
   return (
@@ -170,7 +170,7 @@ function App() {
             element={<CreateExpensePage />}
           />
           <Route 
-            path="/expense/:id" 
+            path=":slug" 
             element={<ExpensePage />}
           />
         </Routes>

@@ -151,7 +151,7 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     return item.claimedBy.length > 0 ? item.price / item.claimedBy.length : item.price;
   };
 
-  const shareUrl = `${window.location.origin}/expense/${expense.id}`;
+  const shareUrl = `${window.location.origin}/${expense.slug || expense.id}`;
   const subtotal = displayItems.reduce((sum, item) => sum + item.price, 0);
   const totalAmount = subtotal + editingTax + editingTip;
 

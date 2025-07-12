@@ -18,6 +18,7 @@ export interface Person {
 
 export interface Expense {
   id: string;
+  slug?: string;
   createdAt: string;
   payerName: string;
   totalAmount: number;
