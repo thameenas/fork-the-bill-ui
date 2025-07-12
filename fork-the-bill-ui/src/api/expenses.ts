@@ -30,7 +30,8 @@ const recalculateSplits = (expense: Expense) => {
       taxShare,
       tipShare,
       totalOwed,
-      amountOwed: personSubtotal // Keep for backward compatibility
+      amountOwed: personSubtotal, // Keep for backward compatibility
+      isFinished: person.isFinished // Preserve completion status
     };
   });
 };
@@ -168,6 +169,62 @@ export const unclaimItem = async (expenseId: string, itemId: string, personName:
   expenses[expenseIndex] = updatedExpense;
   setMockExpenses(expenses);
   
+  return updatedExpense;
+};
+
+export const updatePersonCompletionStatus = async (expenseId: string, personName: string, isFinished: boolean): Promise<Expense> => {
+  console.log('🚀 API: updatePersonCompletionStatus called with:', expenseId, personName, isFinished);
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const expenses = getMockExpenses();
+  const expenseIndex = expenses.findIndex(e => e.id === expenseId);
+  
+  if (expenseIndex === -1) {
+    console.log('❌ API: Expense not found:', expenseId);
+    throw new Error('Expense not found');
+  }
+  
+  const expense = expenses[expenseIndex];
+  console.log('🚀 API: Found expense, current people:', expense.people.map(p => ({ name: p.name, isFinished: p.isFinished })));
+
+  // Check if person exists
+  let personExists = expense.people.some(person => person.name === personName);
+  let updatedPeople;
+  if (!personExists) {
+    // Add new person with default values
+    updatedPeople = [
+      ...expense.people,
+      {
+        name: personName,
+        itemsClaimed: [],
+        amountOwed: 0,
+        subtotal: 0,
+        taxShare: 0,
+        tipShare: 0,
+        totalOwed: 0,
+        isFinished: isFinished
+      }
+    ];
+  } else {
+    updatedPeople = expense.people.map(person =>
+      person.name === personName
+        ? { ...person, isFinished }
+        : person
+    );
+  }
+  
+  console.log('🚀 API: Updated people:', updatedPeople.map(p => ({ name: p.name, isFinished: p.isFinished })));
+  
+  const updatedExpense = {
+    ...expense,
+    people: updatedPeople
+  };
+  
+  expenses[expenseIndex] = updatedExpense;
+  setMockExpenses(expenses);
+  
+  console.log('🚀 API: Successfully updated and saved expense');
   return updatedExpense;
 };
 

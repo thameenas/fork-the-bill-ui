@@ -54,7 +54,8 @@ export const mockExpense: Expense = {
       subtotal: 24.00,
       taxShare: 1.92,
       tipShare: 1.27,
-      totalOwed: 27.19
+      totalOwed: 27.19,
+      isFinished: true
     },
     { 
       name: 'Bob', 
@@ -63,7 +64,8 @@ export const mockExpense: Expense = {
       subtotal: 18.50,
       taxShare: 1.48,
       tipShare: 0.98,
-      totalOwed: 20.96
+      totalOwed: 20.96,
+      isFinished: false
     },
     { 
       name: 'Charlie', 
@@ -72,7 +74,8 @@ export const mockExpense: Expense = {
       subtotal: 24.00,
       taxShare: 1.92,
       tipShare: 1.27,
-      totalOwed: 27.19
+      totalOwed: 27.19,
+      isFinished: true
     },
     { 
       name: 'David', 
@@ -81,7 +84,8 @@ export const mockExpense: Expense = {
       subtotal: 9.00,
       taxShare: 0.72,
       tipShare: 0.48,
-      totalOwed: 10.20
+      totalOwed: 10.20,
+      isFinished: false
     }
   ]
 }; 

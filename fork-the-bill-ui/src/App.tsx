@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
-import ReceiptUpload from './components/ReceiptUpload';
-import ExpenseView from './components/ExpenseView';
+import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { Expense, Item } from './types';
-import { getExpense, createExpense, updateExpenseItems, updateExpenseTaxTip, claimItem } from './api/expenses';
+import ExpenseView from './components/ExpenseView';
+import ReceiptUpload from './components/ReceiptUpload';
+import { getExpense, updateExpenseItems, updateExpenseTaxTip, claimItem, updatePersonCompletionStatus } from './api/expenses';
 
 // Component to handle expense loading and display
 const ExpensePage: React.FC = () => {
@@ -12,6 +12,7 @@ const ExpensePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Load expense data
   useEffect(() => {
     const loadExpense = async () => {
       if (!id) return;
@@ -31,6 +32,7 @@ const ExpensePage: React.FC = () => {
     loadExpense();
   }, [id]);
 
+  // Handle item claiming
   const handleItemClaimed = async (itemId: string, personName: string) => {
     if (!expense) return;
 
@@ -65,6 +67,26 @@ const ExpensePage: React.FC = () => {
     }
   };
 
+  // Handle completion status update
+  const handleCompletionStatusUpdated = async (personName: string, isFinished: boolean) => {
+    console.log('🎯 App: handleCompletionStatusUpdated called with:', personName, isFinished);
+    
+    if (!expense) {
+      console.log('❌ App: No expense available');
+      return;
+    }
+
+    try {
+      console.log('🎯 App: Calling updatePersonCompletionStatus API...');
+      const updatedExpense = await updatePersonCompletionStatus(expense.id, personName, isFinished);
+      console.log('🎯 App: API call successful, updating expense state');
+      setExpense(updatedExpense);
+    } catch (err) {
+      console.error('❌ App: Error updating completion status:', err);
+    }
+  };
+
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
@@ -76,12 +98,13 @@ const ExpensePage: React.FC = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">Error: {error}</p>
-          <button 
+          <button
             onClick={() => window.location.href = '/'}
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
           >
@@ -97,7 +120,7 @@ const ExpensePage: React.FC = () => {
       <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Expense not found</p>
-          <button 
+          <button
             onClick={() => window.location.href = '/'}
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
           >
@@ -109,28 +132,31 @@ const ExpensePage: React.FC = () => {
   }
 
   return (
-    <ExpenseView 
-      expense={expense} 
-      onItemClaimed={handleItemClaimed}
-      onItemsUpdated={handleItemsUpdated}
-      onTaxTipUpdated={handleTaxTipUpdated}
-    />
+    <div className="min-h-screen bg-gray-100">
+      <ExpenseView
+        expense={expense}
+        onItemClaimed={handleItemClaimed}
+        onItemsUpdated={handleItemsUpdated}
+        onTaxTipUpdated={handleTaxTipUpdated}
+        onCompletionStatusUpdated={handleCompletionStatusUpdated}
+      />
+    </div>
   );
 };
 
 // Component to handle expense creation
 const CreateExpensePage: React.FC = () => {
   const navigate = useNavigate();
-  const [creating, setCreating] = useState(false);
 
   const handleExpenseCreated = async (expenseId: string) => {
-    setCreating(true);
     // Use React Router navigation instead of window.location.href
     navigate(`/expense/${expenseId}`);
   };
 
   return (
-    <ReceiptUpload onExpenseCreated={handleExpenseCreated} />
+    <div className="min-h-screen bg-gray-100 py-8">
+      <ReceiptUpload onExpenseCreated={handleExpenseCreated} />
+    </div>
   );
 };
 

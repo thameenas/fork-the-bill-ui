@@ -7,9 +7,10 @@ interface ExpenseViewProps {
   onItemClaimed: (itemId: string, personName: string) => void;
   onItemsUpdated?: (items: Item[]) => void;
   onTaxTipUpdated?: (tax: number, tip: number) => void;
+  onCompletionStatusUpdated?: (personName: string, isFinished: boolean) => void;
 }
 
-const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onItemsUpdated, onTaxTipUpdated }) => {
+const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onItemsUpdated, onTaxTipUpdated, onCompletionStatusUpdated }) => {
   const [selectedPerson, setSelectedPerson] = useState('');
   const [showQR, setShowQR] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -43,6 +44,21 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   // Use real-time updates when not in edit mode
   const displayItems = isEditMode ? editingItems : realTimeUpdates;
+
+  // Get all unique people who have claimed items
+  const getAllPeople = () => {
+    const peopleSet = new Set<string>();
+    displayItems.forEach(item => {
+      item.claimedBy.forEach(person => peopleSet.add(person));
+    });
+    return Array.from(peopleSet);
+  };
+
+  // Get completion status from expense.people
+  const getPersonCompletionStatus = (personName: string) => {
+    const person = expense.people.find(p => p.name === personName);
+    return person ? person.isFinished : false;
+  };
 
   const handleClaimItem = async (itemId: string) => {
     if (!selectedPerson.trim()) return;
@@ -116,6 +132,20 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     setIsEditMode(false);
   };
 
+  const handleToggleCompletionStatus = async (personName: string) => {
+    console.log('🔍 handleToggleCompletionStatus called with:', personName);
+    console.log('🔍 onCompletionStatusUpdated prop:', onCompletionStatusUpdated);
+    
+    if (onCompletionStatusUpdated) {
+      const currentStatus = getPersonCompletionStatus(personName);
+      console.log('🔍 Current status for', personName, ':', currentStatus);
+      console.log('🔍 Calling onCompletionStatusUpdated with:', personName, '!currentStatus =', !currentStatus);
+      onCompletionStatusUpdated(personName, !currentStatus);
+    } else {
+      console.log('❌ onCompletionStatusUpdated prop is not provided!');
+    }
+  };
+
   const getItemClaimCount = (item: Item) => item.claimedBy.length;
   const getItemPricePerPerson = (item: Item) => {
     return item.claimedBy.length > 0 ? item.price / item.claimedBy.length : item.price;
@@ -124,6 +154,10 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   const shareUrl = `${window.location.origin}/expense/${expense.id}`;
   const subtotal = displayItems.reduce((sum, item) => sum + item.price, 0);
   const totalAmount = subtotal + editingTax + editingTip;
+
+  // Get completion status
+  const allPeople = getAllPeople();
+  const finishedPeople = allPeople.filter(person => getPersonCompletionStatus(person));
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
@@ -174,6 +208,61 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
         <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center">
           <QRCode value={shareUrl} size={128} className="mx-auto mb-2" />
           <p className="text-sm text-gray-600">Scan to join this bill</p>
+        </div>
+      )}
+
+      {/* Completion Status */}
+      {!isEditMode && allPeople.length > 0 && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h3 className="text-lg font-semibold text-green-800 mb-3">Completion Status</h3>
+          <div className="space-y-3">
+            {allPeople.map(person => {
+              const isFinished = getPersonCompletionStatus(person);
+              const isCurrentUser = person === selectedPerson;
+              
+              return (
+                <div key={person} className="flex items-center justify-between">
+                  <span className="font-medium">{person}</span>
+                  <div className="flex items-center gap-2">
+                    {isFinished ? (
+                      <span className="inline-flex items-center text-green-600">
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Finished
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center text-gray-500">
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                        Pending
+                      </span>
+                    )}
+                    
+                    {/* Only show toggle button for current user */}
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => handleToggleCompletionStatus(person)}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          isFinished
+                            ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                            : 'bg-green-500 text-white hover:bg-green-600'
+                        }`}
+                      >
+                        {isFinished ? 'Mark as Pending' : 'Mark as Finished'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 pt-3 border-t border-green-200">
+            <p className="text-sm text-green-700">
+              {finishedPeople.length} of {allPeople.length} people have marked themselves as finished
+            </p>
+          </div>
         </div>
       )}
 

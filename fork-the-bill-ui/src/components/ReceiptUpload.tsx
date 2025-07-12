@@ -61,7 +61,18 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
             claimedBy: []
           }
         ],
-        people: []
+        people: [
+          {
+            name: payerName.trim(),
+            itemsClaimed: [],
+            amountOwed: 0,
+            subtotal: 0,
+            taxShare: 0,
+            tipShare: 0,
+            totalOwed: 0,
+            isFinished: false
+          }
+        ]
       };
 
       const newExpense = await createExpense(mockExpenseData);

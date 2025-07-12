@@ -13,6 +13,7 @@ export interface Person {
   taxShare: number;
   tipShare: number;
   totalOwed: number;
+  isFinished: boolean;
 }
 
 export interface Expense {
