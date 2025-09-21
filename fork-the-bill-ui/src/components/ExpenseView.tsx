@@ -314,17 +314,25 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
         </div>
       )}
 
-      {/* Completion Status */}
-      {!isEditMode && selectedPerson.trim() && (
+      {/* Completion Status - All Users */}
+      {!isEditMode && (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-green-800 mb-3">Your Status</h3>
+          <h3 className="text-lg font-semibold text-green-800 mb-3">Everyone's Status</h3>
           <div className="space-y-3">
-            {(() => {
-              const isFinished = getPersonCompletionStatus(selectedPerson);
+            {allPeople.map((personName) => {
+              const isFinished = getPersonCompletionStatus(personName);
+              const isCurrentUser = personName === selectedPerson;
               
               return (
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{selectedPerson}</span>
+                <div key={personName} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{personName}</span>
+                    {isCurrentUser && (
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        You
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     {isFinished ? (
                       <span className="inline-flex items-center text-green-600">
@@ -342,20 +350,22 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
                       </span>
                     )}
                     
-                    <button
-                      onClick={() => handleToggleCompletionStatus(selectedPerson)}
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        isFinished
-                          ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                          : 'bg-green-500 text-white hover:bg-green-600'
-                      }`}
-                    >
-                      {isFinished ? 'Mark as Pending' : 'Mark as Finished'}
-                    </button>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => handleToggleCompletionStatus(personName)}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          isFinished
+                            ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                            : 'bg-green-500 text-white hover:bg-green-600'
+                        }`}
+                      >
+                        {isFinished ? 'Mark as Pending' : 'Mark as Finished'}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
-            })()}
+            })}
           </div>
           <div className="mt-3 pt-3 border-t border-green-200">
             <p className="text-sm text-green-700">
