@@ -34,9 +34,10 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   // Update real-time updates when expense changes
   useEffect(() => {
+    console.log('🎯 ExpenseView: Expense prop changed, people:', expense.people.map(p => ({ name: p.name, isFinished: p.isFinished })));
     setRealTimeUpdates(expense.items);
     setEditingItems(expense.items);
-  }, [expense.items]);
+  }, [expense.items, expense.people]);
 
   const showMessage = (message: string, isError: boolean = false) => {
     if (isError) {
@@ -56,8 +57,11 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   // Use real-time updates when not in edit mode
   const displayItems = isEditMode ? editingItems : realTimeUpdates;
 
-  // Get all unique people who have claimed items
   const getAllPeople = () => {
+    return expense.people.map(person => person.name);
+  };
+
+  const getPeopleWhoClaimedItems = () => {
     const peopleSet = new Set<string>();
     displayItems.forEach(item => {
       item.claimedBy.forEach(person => peopleSet.add(person));
@@ -68,7 +72,17 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   // Get completion status from expense.people
   const getPersonCompletionStatus = (personName: string) => {
     const person = expense.people.find(p => p.name === personName);
-    return person ? person.isFinished : false;
+
+    // If person doesn't exist, return false (not finished)
+    if (!person) {
+      console.log(`🎯 ExpenseView: Person "${personName}" not found in expense, returning false`);
+      return false;
+    }
+    
+    // If person exists but isFinished is undefined, return false
+    const isFinished = person.isFinished === undefined ? false : person.isFinished;
+    console.log(`🎯 ExpenseView: getPersonCompletionStatus(${personName}) = ${isFinished}`);
+    return isFinished;
   };
 
   const handleClaimItem = async (itemId: string) => {
@@ -191,14 +205,10 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       const currentStatus = getPersonCompletionStatus(personName);
       const newStatus = !currentStatus;
       
-      // Use real API to update completion status
-      await updatePersonCompletionStatus(expense.slug, personName, newStatus);
-      
-      // Call the parent callback
       onCompletionStatusUpdated(personName, newStatus);
     } catch (error) {
       console.error('Failed to update completion status:', error);
-      // Could show error message to user
+      showMessage('Failed to update completion status. Please try again.', true);
     }
   };
 
@@ -302,17 +312,16 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       )}
 
       {/* Completion Status */}
-      {!isEditMode && allPeople.length > 0 && (
+      {!isEditMode && selectedPerson.trim() && (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-green-800 mb-3">Completion Status</h3>
+          <h3 className="text-lg font-semibold text-green-800 mb-3">Your Status</h3>
           <div className="space-y-3">
-            {allPeople.map(person => {
-              const isFinished = getPersonCompletionStatus(person);
-              const isCurrentUser = person === selectedPerson;
+            {(() => {
+              const isFinished = getPersonCompletionStatus(selectedPerson);
               
               return (
-                <div key={person} className="flex items-center justify-between">
-                  <span className="font-medium">{person}</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{selectedPerson}</span>
                   <div className="flex items-center gap-2">
                     {isFinished ? (
                       <span className="inline-flex items-center text-green-600">
@@ -330,23 +339,20 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
                       </span>
                     )}
                     
-                    {/* Only show toggle button for current user */}
-                    {isCurrentUser && (
-                      <button
-                        onClick={() => handleToggleCompletionStatus(person)}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          isFinished
-                            ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                            : 'bg-green-500 text-white hover:bg-green-600'
-                        }`}
-                      >
-                        {isFinished ? 'Mark as Pending' : 'Mark as Finished'}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleToggleCompletionStatus(selectedPerson)}
+                      className={`px-3 py-1 rounded-md text-sm ${
+                        isFinished
+                          ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                          : 'bg-green-500 text-white hover:bg-green-600'
+                      }`}
+                    >
+                      {isFinished ? 'Mark as Pending' : 'Mark as Finished'}
+                    </button>
                   </div>
                 </div>
               );
-            })}
+            })()}
           </div>
           <div className="mt-3 pt-3 border-t border-green-200">
             <p className="text-sm text-green-700">

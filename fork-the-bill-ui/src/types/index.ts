@@ -15,7 +15,7 @@ export interface PersonResponse {
   taxShare: number;
   tipShare: number;
   totalOwed: number;
-  isFinished: boolean;
+  finished: boolean; // API uses 'finished' instead of 'isFinished'
 }
 
 export interface ExpenseResponse {

@@ -71,7 +71,7 @@ export const convertExpenseResponseToExpense = (response: ExpenseResponse): Expe
     taxShare: person.taxShare,
     tipShare: person.tipShare,
     totalOwed: person.totalOwed,
-    isFinished: person.isFinished,
+    isFinished: person.finished,
   }));
 
   return {
