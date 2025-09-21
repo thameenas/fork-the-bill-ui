@@ -200,11 +200,18 @@ export const updateExpense = async (slug: string, expenseData: ExpenseRequest): 
 export const claimItem = async (slug: string, itemId: string, personName: string): Promise<Expense> => {
   try {
     // First, get the current expense to find person ID
-    const currentExpense = await getExpense(slug);
-    const person = currentExpense.people.find(p => p.name === personName);
+    let currentExpense = await getExpense(slug);
+    let person = currentExpense.people.find(p => p.name === personName);
     
+    // If person doesn't exist, add them to the expense first
     if (!person || !person.id) {
-      throw new Error(`Person "${personName}" not found or missing ID`);
+      console.log(`Adding new person "${personName}" to expense`);
+      currentExpense = await addPersonToExpense(slug, personName);
+      person = currentExpense.people.find(p => p.name === personName);
+      
+      if (!person || !person.id) {
+        throw new Error(`Failed to add person "${personName}" to expense`);
+      }
     }
 
     const claimRequest: ClaimItemRequest = {
@@ -380,6 +387,21 @@ export const updateExpenseTaxTip = async (slug: string, tax: number, tip: number
 
 export const updatePersonCompletionStatus = async (slug: string, personName: string, isFinished: boolean): Promise<Expense> => {
   try {
+    // First, get the current expense to find person ID
+    let currentExpense = await getExpense(slug);
+    let person = currentExpense.people.find(p => p.name === personName);
+    
+    // If person doesn't exist, add them to the expense first
+    if (!person || !person.id) {
+      console.log(`Adding new person "${personName}" to expense for completion status update`);
+      currentExpense = await addPersonToExpense(slug, personName);
+      person = currentExpense.people.find(p => p.name === personName);
+      
+      if (!person || !person.id) {
+        throw new Error(`Failed to add person "${personName}" to expense`);
+      }
+    }
+
     if (isFinished) {
       return await markPersonAsFinished(slug, personName);
     } else {
