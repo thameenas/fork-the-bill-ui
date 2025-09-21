@@ -33,6 +33,7 @@ export interface ExpenseResponse {
 
 // Backend API Request Types
 export interface ItemRequest {
+  id?: string;
   name: string;
   price: number;
 }

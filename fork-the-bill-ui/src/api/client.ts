@@ -99,6 +99,7 @@ export const convertExpenseToExpenseRequest = (expense: Expense): ExpenseRequest
 
   // Convert items with person IDs instead of names
   const items = expense.items.map(item => ({
+    id: item.id,
     name: item.name,
     price: item.price,
   }));
@@ -322,6 +323,7 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
     
     // Convert items to request format
     const itemRequests = items.map(item => ({
+      id: item.id,
       name: item.name,
       price: item.price,
     }));
@@ -366,6 +368,7 @@ export const updateExpenseTaxTip = async (slug: string, tax: number, tip: number
       tax,
       tip,
       items: currentExpense.items.map(item => ({
+        id: item.id,
         name: item.name,
         price: item.price,
       })),
