@@ -4,8 +4,6 @@ import QRCode from 'react-qr-code';
 import { 
   claimItem, 
   unclaimItem, 
-  updateExpenseItems, 
-  updateExpenseTaxTip, 
   updatePersonCompletionStatus,
   addPersonToExpense 
 } from '../api/client';
@@ -29,8 +27,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>(expense.items);
   const [editingTax, setEditingTax] = useState(expense.tax);
   const [editingTip, setEditingTip] = useState(expense.tip);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Update real-time updates when expense changes
   useEffect(() => {
@@ -39,20 +35,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     setEditingItems(expense.items);
   }, [expense.items, expense.people]);
 
-  const showMessage = (message: string, isError: boolean = false) => {
-    if (isError) {
-      setErrorMessage(message);
-      setSuccessMessage(null);
-    } else {
-      setSuccessMessage(message);
-      setErrorMessage(null);
-    }
-    
-    setTimeout(() => {
-      setErrorMessage(null);
-      setSuccessMessage(null);
-    }, 5000);
-  };
 
   // Use real-time updates when not in edit mode
   const displayItems = isEditMode ? editingItems : realTimeUpdates;
@@ -102,15 +84,13 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       
       const item = updatedExpense.items.find(i => i.id === itemId);
       if (item && item.claimedBy.includes(selectedPerson)) {
-        console.log('🎯 Showing success message for:', item.name);
-        showMessage(`Successfully claimed "${item.name}"!`, false);
+        console.log('🎯 Successfully claimed item:', item.name);
       }
     } catch (error: any) {
       console.error('❌ Failed to claim item:', error);
       
       const errorMsg = error?.message || 'Failed to claim item. Please try again.';
-      console.log('❌ Showing error message:', errorMsg);
-      showMessage(errorMsg, true);
+      console.log('❌ Error claiming item:', errorMsg);
     } finally {
       setIsClaiming(null);
     }
@@ -132,13 +112,13 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       
       const item = updatedExpense.items.find(i => i.id === itemId);
       if (item) {
-        showMessage(`Successfully unclaimed "${item.name}"!`, false);
+        console.log('🎯 Successfully unclaimed item:', item.name);
       }
     } catch (error: any) {
       console.error('Failed to unclaim item:', error);
       
       const errorMsg = error?.message || 'Failed to unclaim item. Please try again.';
-      showMessage(errorMsg, true);
+      console.log('❌ Error unclaiming item:', errorMsg);
     }
   };
 
@@ -174,23 +154,21 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     if (!expense.slug) return;
     
     try {
-      // Update items if they changed
+      // Update items if they changed - let parent handle the API call
       if (onItemsUpdated) {
-        await updateExpenseItems(expense.slug, editingItems);
         onItemsUpdated(editingItems);
       }
       
-      // Update tax/tip if they changed
+      // Update tax/tip if they changed - let parent handle the API call
       if (onTaxTipUpdated && (editingTax !== expense.tax || editingTip !== expense.tip)) {
-        await updateExpenseTaxTip(expense.slug, editingTax, editingTip);
         onTaxTipUpdated(editingTax, editingTip);
       }
       
       setRealTimeUpdates(editingItems);
       setIsEditMode(false);
+      console.log('🎯 Changes saved successfully');
     } catch (error) {
       console.error('Failed to save changes:', error);
-      // Could show error message to user
     }
   };
 
@@ -211,7 +189,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       onCompletionStatusUpdated(personName, newStatus);
     } catch (error) {
       console.error('Failed to update completion status:', error);
-      showMessage('Failed to update completion status. Please try again.', true);
     }
   };
 
@@ -267,44 +244,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
         </div>
       </div>
 
-      {/* Error and Success Messages */}
-      {errorMessage && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <p className="text-red-800 font-medium">{errorMessage}</p>
-            <button
-              onClick={() => setErrorMessage(null)}
-              className="ml-auto text-red-400 hover:text-red-600"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <p className="text-green-800 font-medium">{successMessage}</p>
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="ml-auto text-green-400 hover:text-green-600"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* QR Code - Mobile optimized */}
       {showQR && (
