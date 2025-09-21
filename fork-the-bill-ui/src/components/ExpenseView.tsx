@@ -127,6 +127,9 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       setRealTimeUpdates(updatedExpense.items);
       setEditingItems(updatedExpense.items);
       
+      // Notify parent component to refresh expense data
+      onItemClaimed(itemId, personName);
+      
       const item = updatedExpense.items.find(i => i.id === itemId);
       if (item) {
         showMessage(`Successfully unclaimed "${item.name}"!`, false);
@@ -233,10 +236,10 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Restaurant Bill</h2>
           <p className="text-gray-600 text-sm sm:text-base">Paid by {expense.payerName}</p>
           <div className="text-sm text-gray-500 space-y-1">
-            <p>Subtotal: ${subtotal.toFixed(2)}</p>
-            <p>Tax: ${editingTax.toFixed(2)}</p>
-            <p>Tip: ${editingTip.toFixed(2)}</p>
-            <p className="font-semibold">Total: ${totalAmount.toFixed(2)}</p>
+            <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
+            <p>Tax: ₹{editingTax.toFixed(2)}</p>
+            <p>Tip: ₹{editingTip.toFixed(2)}</p>
+            <p className="font-semibold">Total: ₹{totalAmount.toFixed(2)}</p>
           </div>
         </div>
         
@@ -493,10 +496,10 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
                   <>
                     <h4 className="font-medium text-gray-800">{item.name}</h4>
                     <p className="text-sm text-gray-600">
-                      ${item.price.toFixed(2)}
+                      ₹{item.price.toFixed(2)}
                       {getItemClaimCount(item) > 0 && (
                         <span className="ml-2">
-                          (${getItemPricePerPerson(item).toFixed(2)} each)
+                          (₹{getItemPricePerPerson(item).toFixed(2)} each)
                         </span>
                       )}
                     </p>
@@ -566,21 +569,21 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium text-lg">{person.name}</span>
                 <span className="text-lg font-semibold text-blue-600">
-                  ${person.totalOwed.toFixed(2)}
+                  ₹{person.totalOwed.toFixed(2)}
                 </span>
               </div>
               <div className="text-sm text-gray-600 space-y-1">
                 <div className="flex justify-between">
                   <span>Items:</span>
-                  <span>${person.subtotal.toFixed(2)}</span>
+                  <span>₹{person.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
-                  <span>${person.taxShare.toFixed(2)}</span>
+                  <span>₹{person.taxShare.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tip ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
-                  <span>${person.tipShare.toFixed(2)}</span>
+                  <span>₹{person.tipShare.toFixed(2)}</span>
                 </div>
               </div>
             </div>

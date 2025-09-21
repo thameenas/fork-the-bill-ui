@@ -32,8 +32,21 @@ const ExpensePage: React.FC = () => {
     loadExpense();
   }, [slug]);
 
-  const handleItemClaimed = (itemId: string, personName: string) => {
+  const handleItemClaimed = async (itemId: string, personName: string) => {
     console.log('🎯 App: Item claimed callback received:', itemId, personName);
+    
+    if (!expense || !expense.slug) {
+      console.log('❌ App: No expense available or missing slug');
+      return;
+    }
+
+    try {
+      console.log('🎯 App: Refreshing expense data after item claim...');
+      const updatedExpense = await getExpense(expense.slug);
+      setExpense(updatedExpense);
+    } catch (err) {
+      console.error('❌ App: Error refreshing expense after claim:', err);
+    }
   };
 
   const handleItemsUpdated = async (updatedItems: Item[]) => {
