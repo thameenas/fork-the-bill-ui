@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from '
 import { Expense, Item } from './types';
 import ExpenseView from './components/ExpenseView';
 import ReceiptUpload from './components/ReceiptUpload';
-import { getExpense, updateExpenseItems, updateExpenseTaxTip, claimItem, updatePersonCompletionStatus } from './api/client';
+import { getExpense, updateExpenseItems, updateExpenseTaxTip, updatePersonCompletionStatus } from './api/client';
 
 // Component to handle expense loading and display
 const ExpensePage: React.FC = () => {
@@ -32,24 +32,15 @@ const ExpensePage: React.FC = () => {
     loadExpense();
   }, [slug]);
 
-  // Handle item claiming
-  const handleItemClaimed = async (itemId: string, personName: string) => {
-    if (!expense) return;
-
-    try {
-      const updatedExpense = await claimItem(expense.id, itemId, personName);
-      setExpense(updatedExpense);
-    } catch (err) {
-      console.error('Failed to claim item:', err);
-      // Could show a toast notification here
-    }
+  const handleItemClaimed = (itemId: string, personName: string) => {
+    console.log('🎯 App: Item claimed callback received:', itemId, personName);
   };
 
   const handleItemsUpdated = async (updatedItems: Item[]) => {
-    if (!expense) return;
+    if (!expense || !expense.slug) return;
 
     try {
-      const updatedExpense = await updateExpenseItems(expense.id, updatedItems);
+      const updatedExpense = await updateExpenseItems(expense.slug, updatedItems);
       setExpense(updatedExpense);
     } catch (err) {
       console.error('Failed to update items:', err);
@@ -57,10 +48,10 @@ const ExpensePage: React.FC = () => {
   };
 
   const handleTaxTipUpdated = async (tax: number, tip: number) => {
-    if (!expense) return;
+    if (!expense || !expense.slug) return;
 
     try {
-      const updatedExpense = await updateExpenseTaxTip(expense.id, tax, tip);
+      const updatedExpense = await updateExpenseTaxTip(expense.slug, tax, tip);
       setExpense(updatedExpense);
     } catch (err) {
       console.error('Failed to update tax/tip:', err);
@@ -71,14 +62,14 @@ const ExpensePage: React.FC = () => {
   const handleCompletionStatusUpdated = async (personName: string, isFinished: boolean) => {
     console.log('🎯 App: handleCompletionStatusUpdated called with:', personName, isFinished);
     
-    if (!expense) {
-      console.log('❌ App: No expense available');
+    if (!expense || !expense.slug) {
+      console.log('❌ App: No expense available or missing slug');
       return;
     }
 
     try {
       console.log('🎯 App: Calling updatePersonCompletionStatus API...');
-      const updatedExpense = await updatePersonCompletionStatus(expense.id, personName, isFinished);
+      const updatedExpense = await updatePersonCompletionStatus(expense.slug, personName, isFinished);
       console.log('🎯 App: API call successful, updating expense state');
       setExpense(updatedExpense);
     } catch (err) {

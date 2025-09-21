@@ -30,6 +30,7 @@ apiClient.interceptors.response.use(
   },
   (error: AxiosError) => {
     console.log('❌ API Error:', error.code, error.message, error.response?.status);
+    console.log('❌ API Error response data:', error.response?.data);
 
     const responseData = error.response?.data as any;
     const apiError: ApiError = {
@@ -39,6 +40,7 @@ apiClient.interceptors.response.use(
       message: responseData?.message || error.message || 'An error occurred',
       path: error.config?.url || 'Unknown path',
     };
+    console.log('❌ Throwing API Error:', apiError);
     throw apiError;
   }
 );
@@ -222,6 +224,7 @@ export const claimItem = async (slug: string, itemId: string, personName: string
       getApiUrl(API_CONFIG.ENDPOINTS.CLAIM_ITEM(slug, itemId)),
       claimRequest
     );
+    console.log(`✅ Successfully claimed item ${itemId} for person ${personName}`);
     return convertExpenseResponseToExpense(response.data);
   } catch (error) {
     console.error('Failed to claim item:', error);
