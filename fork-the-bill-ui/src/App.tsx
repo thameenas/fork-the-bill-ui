@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from '
 import { Expense, Item } from './types';
 import ExpenseView from './components/ExpenseView';
 import ReceiptUpload from './components/ReceiptUpload';
-import { getExpense, updateExpenseItems, updateExpenseTaxTip, claimItem, updatePersonCompletionStatus } from './api/expenses';
+import { getExpense, updateExpenseItems, updateExpenseTaxTip, claimItem, updatePersonCompletionStatus } from './api/client';
 
 // Component to handle expense loading and display
 const ExpensePage: React.FC = () => {

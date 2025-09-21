@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createExpense } from '../api/expenses';
+import { createExpenseFromImage } from '../api/client';
 
 interface ReceiptUploadProps {
   onExpenseCreated: (slug: string) => void;
@@ -8,78 +8,22 @@ interface ReceiptUploadProps {
 const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [payerName, setPayerName] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !payerName.trim()) return;
 
     setIsUploading(true);
+    setError(null);
     
     try {
-      // Mock expense creation - in real app, this would process the receipt with AI
-      const mockExpenseData = {
-        payerName: payerName.trim(),
-        totalAmount: 85.50,
-        subtotal: 75.50,
-        tax: 6.04,
-        tip: 4.00,
-        items: [
-          {
-            id: 'item-1',
-            name: 'Margherita Pizza',
-            price: 18.00,
-            claimedBy: []
-          },
-          {
-            id: 'item-2',
-            name: 'Caesar Salad',
-            price: 12.50,
-            claimedBy: []
-          },
-          {
-            id: 'item-3',
-            name: 'Pasta Carbonara',
-            price: 16.00,
-            claimedBy: []
-          },
-          {
-            id: 'item-4',
-            name: 'Garlic Bread',
-            price: 6.00,
-            claimedBy: []
-          },
-          {
-            id: 'item-5',
-            name: 'Tiramisu',
-            price: 8.00,
-            claimedBy: []
-          },
-          {
-            id: 'item-6',
-            name: 'Soft Drinks',
-            price: 15.00,
-            claimedBy: []
-          }
-        ],
-        people: [
-          {
-            name: payerName.trim(),
-            itemsClaimed: [],
-            amountOwed: 0,
-            subtotal: 0,
-            taxShare: 0,
-            tipShare: 0,
-            totalOwed: 0,
-            isFinished: false
-          }
-        ]
-      };
-
-      const newExpense = await createExpense(mockExpenseData);
+      // Use real AI-powered receipt processing
+      const newExpense = await createExpenseFromImage(file, payerName.trim());
       onExpenseCreated(newExpense.slug || newExpense.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create expense:', error);
-      // Could show an error message to the user here
+      setError(error.message || 'Failed to process receipt. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -151,6 +95,12 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
 
         {!payerName.trim() && (
           <p className="text-sm text-red-600 text-center">Please enter your name first</p>
+        )}
+
+        {error && (
+          <div className="text-center">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
         )}
 
         {isUploading && (

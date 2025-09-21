@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Expense, Item } from '../types';
 import QRCode from 'react-qr-code';
+import { 
+  claimItem, 
+  unclaimItem, 
+  updateExpenseItems, 
+  updateExpenseTaxTip, 
+  updatePersonCompletionStatus,
+  addPersonToExpense 
+} from '../api/client';
 
 interface ExpenseViewProps {
   expense: Expense;
@@ -22,25 +30,11 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   const [editingTax, setEditingTax] = useState(expense.tax);
   const [editingTip, setEditingTip] = useState(expense.tip);
 
-  // Mock real-time updates - simulates other users claiming items
+  // Update real-time updates when expense changes
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate random claims from other users
-      const mockUsers = ['Alice', 'Bob', 'Charlie', 'David'];
-      const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-      const randomItem = editingItems[Math.floor(Math.random() * editingItems.length)];
-      
-      if (randomItem && !randomItem.claimedBy.includes(randomUser) && Math.random() < 0.1) {
-        setRealTimeUpdates(prev => prev.map(item => 
-          item.id === randomItem.id 
-            ? { ...item, claimedBy: [...item.claimedBy, randomUser] }
-            : item
-        ));
-      }
-    }, 3000); // Update every 3 seconds
-
-    return () => clearInterval(interval);
-  }, [editingItems]);
+    setRealTimeUpdates(expense.items);
+    setEditingItems(expense.items);
+  }, [expense.items]);
 
   // Use real-time updates when not in edit mode
   const displayItems = isEditMode ? editingItems : realTimeUpdates;
@@ -61,29 +55,40 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   };
 
   const handleClaimItem = async (itemId: string) => {
-    if (!selectedPerson.trim()) return;
+    if (!selectedPerson.trim() || !expense.slug) return;
     
     setIsClaiming(itemId);
     
-    // Mock API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Update both local state and real-time state
-    const updatedItems = displayItems.map(item =>
-      item.id === itemId
-        ? { ...item, claimedBy: [...item.claimedBy, selectedPerson] }
-        : item
-    );
-    
-    setRealTimeUpdates(updatedItems);
-    setEditingItems(updatedItems);
-    onItemClaimed(itemId, selectedPerson);
-    setIsClaiming(null);
+    try {
+      // Use real API to claim item
+      const updatedExpense = await claimItem(expense.slug, itemId, selectedPerson);
+      
+      // Update local state with the response
+      setRealTimeUpdates(updatedExpense.items);
+      setEditingItems(updatedExpense.items);
+      onItemClaimed(itemId, selectedPerson);
+    } catch (error) {
+      console.error('Failed to claim item:', error);
+      // Could show error message to user
+    } finally {
+      setIsClaiming(null);
+    }
   };
 
-  const handleUnclaimItem = (itemId: string, personName: string) => {
-    // Mock unclaim - in real app, this would call the API
-    console.log(`Unclaiming item ${itemId} from ${personName}`);
+  const handleUnclaimItem = async (itemId: string, personName: string) => {
+    if (!expense.slug) return;
+    
+    try {
+      // Use real API to unclaim item
+      const updatedExpense = await unclaimItem(expense.slug, itemId, personName);
+      
+      // Update local state with the response
+      setRealTimeUpdates(updatedExpense.items);
+      setEditingItems(updatedExpense.items);
+    } catch (error) {
+      console.error('Failed to unclaim item:', error);
+      // Could show error message to user
+    }
   };
 
   const handleEditItem = (itemId: string, field: 'name' | 'price', value: string) => {
@@ -114,15 +119,28 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     setNewItemPrice('');
   };
 
-  const handleSaveChanges = () => {
-    if (onItemsUpdated) {
-      onItemsUpdated(editingItems);
+  const handleSaveChanges = async () => {
+    if (!expense.slug) return;
+    
+    try {
+      // Update items if they changed
+      if (onItemsUpdated) {
+        await updateExpenseItems(expense.slug, editingItems);
+        onItemsUpdated(editingItems);
+      }
+      
+      // Update tax/tip if they changed
+      if (onTaxTipUpdated && (editingTax !== expense.tax || editingTip !== expense.tip)) {
+        await updateExpenseTaxTip(expense.slug, editingTax, editingTip);
+        onTaxTipUpdated(editingTax, editingTip);
+      }
+      
+      setRealTimeUpdates(editingItems);
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('Failed to save changes:', error);
+      // Could show error message to user
     }
-    if (onTaxTipUpdated) {
-      onTaxTipUpdated(editingTax, editingTip);
-    }
-    setRealTimeUpdates(editingItems);
-    setIsEditMode(false);
   };
 
   const handleCancelEdit = () => {
@@ -133,16 +151,20 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   };
 
   const handleToggleCompletionStatus = async (personName: string) => {
-    console.log('🔍 handleToggleCompletionStatus called with:', personName);
-    console.log('🔍 onCompletionStatusUpdated prop:', onCompletionStatusUpdated);
+    if (!expense.slug || !onCompletionStatusUpdated) return;
     
-    if (onCompletionStatusUpdated) {
+    try {
       const currentStatus = getPersonCompletionStatus(personName);
-      console.log('🔍 Current status for', personName, ':', currentStatus);
-      console.log('🔍 Calling onCompletionStatusUpdated with:', personName, '!currentStatus =', !currentStatus);
-      onCompletionStatusUpdated(personName, !currentStatus);
-    } else {
-      console.log('❌ onCompletionStatusUpdated prop is not provided!');
+      const newStatus = !currentStatus;
+      
+      // Use real API to update completion status
+      await updatePersonCompletionStatus(expense.slug, personName, newStatus);
+      
+      // Call the parent callback
+      onCompletionStatusUpdated(personName, newStatus);
+    } catch (error) {
+      console.error('Failed to update completion status:', error);
+      // Could show error message to user
     }
   };
 
@@ -172,11 +194,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
             <p>Tip: ${editingTip.toFixed(2)}</p>
             <p className="font-semibold">Total: ${totalAmount.toFixed(2)}</p>
           </div>
-          {!isEditMode && (
-            <p className="text-xs text-green-600 mt-1">
-              🔴 Live updates enabled
-            </p>
-          )}
         </div>
         
         <div className="flex flex-wrap gap-2">

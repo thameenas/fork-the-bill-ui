@@ -1,0 +1,787 @@
+openapi: 3.0.3
+info:
+  title: Fork The Bill Service API
+  description: |
+    A RESTful API service for splitting bills and managing shared expenses. 
+    This service allows users to create expense records, upload bill images for automatic parsing, 
+    and manage item claims and person assignments for fair bill splitting.
+    
+    ## Features
+    - Create and manage expense records
+    - Upload bill images for automatic parsing using AI
+    - Split bills among multiple people
+    - Claim and unclaim specific items
+    - Track payment status for each person
+    - Calculate proportional tax and tip sharing
+    
+    ## Authentication
+    Currently, this API does not require authentication. All endpoints are publicly accessible.
+
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.forkthebill.com
+    description: Production server
+
+paths:
+  /expense:
+    post:
+      summary: Create a new expense
+      description: Creates a new expense record with items and people. The expense will be assigned a unique slug for sharing.
+      operationId: createExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseRequest'
+            example:
+              payerName: "John Doe"
+              totalAmount: 45.67
+              subtotal: 38.50
+              tax: 3.85
+              tip: 3.32
+              items:
+                - name: "Burger Deluxe"
+                  price: 15.99
+                - name: "Caesar Salad"
+                  price: 12.50
+                - name: "Soft Drink"
+                  price: 3.99
+                - name: "Coffee"
+                  price: 6.02
+              people:
+                - name: "John Doe"
+                  amountOwed: 22.84
+                  subtotal: 19.25
+                  taxShare: 1.93
+                  tipShare: 1.66
+                  totalOwed: 22.84
+                  isFinished: false
+                - name: "Jane Smith"
+                  amountOwed: 22.83
+                  subtotal: 19.25
+                  taxShare: 1.92
+                  tipShare: 1.66
+                  totalOwed: 22.83
+                  isFinished: false
+      responses:
+        '201':
+          description: Expense created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          description: Bad request - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /expense/upload:
+    post:
+      summary: Create expense from bill image
+      description: |
+        Uploads a bill image and uses AI to automatically parse the bill data including items, prices, and totals.
+        The AI will extract restaurant information, items, and calculate subtotal, tax, tip, and total amounts.
+      operationId: createExpenseFromImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - bill
+                - payerName
+              properties:
+                bill:
+                  type: string
+                  format: binary
+                  description: Image file of the bill (JPEG, PNG, etc.)
+                payerName:
+                  type: string
+                  description: Name of the person who paid the bill
+                  example: "John Doe"
+      responses:
+        '201':
+          description: Expense created successfully from image
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          description: Bad request - invalid file or missing payer name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error or AI processing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /expense/{slug}:
+    get:
+      summary: Get expense by slug
+      description: Retrieves an expense record using its unique slug identifier.
+      operationId: getExpenseBySlug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Unique slug identifier for the expense
+          schema:
+            type: string
+          example: "john-doe-burger-2024-01-15"
+      responses:
+        '200':
+          description: Expense found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '404':
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    put:
+      summary: Update expense by slug
+      description: Updates an existing expense record. All fields will be replaced with the new values.
+      operationId: updateExpenseBySlug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Unique slug identifier for the expense
+          schema:
+            type: string
+          example: "john-doe-burger-2024-01-15"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseRequest'
+      responses:
+        '200':
+          description: Expense updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          description: Bad request - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /expense/{slug}/items/{itemId}/claim:
+    post:
+      summary: Claim an item
+      description: Claims a specific item for a person, adding them to the item's claimed by list and recalculating amounts.
+      operationId: claimItem
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Unique slug identifier for the expense
+          schema:
+            type: string
+          example: "john-doe-burger-2024-01-15"
+        - name: itemId
+          in: path
+          required: true
+          description: Unique identifier for the item
+          schema:
+            type: string
+          example: "item-uuid-123"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimItemRequest'
+            example:
+              personId: "person-uuid-456"
+      responses:
+        '200':
+          description: Item claimed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          description: Bad request - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Expense, item, or person not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /expense/{slug}/items/{itemId}/claim/{personId}:
+    delete:
+      summary: Unclaim an item
+      description: Removes a person's claim on a specific item and recalculates amounts.
+      operationId: unclaimItem
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Unique slug identifier for the expense
+          schema:
+            type: string
+          example: "john-doe-burger-2024-01-15"
+        - name: itemId
+          in: path
+          required: true
+          description: Unique identifier for the item
+          schema:
+            type: string
+          example: "item-uuid-123"
+        - name: personId
+          in: path
+          required: true
+          description: Unique identifier for the person
+          schema:
+            type: string
+            format: uuid
+          example: "person-uuid-456"
+      responses:
+        '200':
+          description: Item unclaimed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '404':
+          description: Expense, item, or person not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /expense/{slug}/people/{personId}/finish:
+    put:
+      summary: Mark person as finished
+      description: Marks a person as finished with their payment, indicating they have completed their portion of the bill.
+      operationId: markPersonAsFinished
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Unique slug identifier for the expense
+          schema:
+            type: string
+          example: "john-doe-burger-2024-01-15"
+        - name: personId
+          in: path
+          required: true
+          description: Unique identifier for the person
+          schema:
+            type: string
+            format: uuid
+          example: "person-uuid-456"
+      responses:
+        '200':
+          description: Person marked as finished successfully
+        '404':
+          description: Expense or person not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /expense/{slug}/people/{personId}/pending:
+    put:
+      summary: Mark person as pending
+      description: Marks a person as pending payment, indicating they still need to pay their portion of the bill.
+      operationId: markPersonAsPending
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Unique slug identifier for the expense
+          schema:
+            type: string
+          example: "john-doe-burger-2024-01-15"
+        - name: personId
+          in: path
+          required: true
+          description: Unique identifier for the person
+          schema:
+            type: string
+            format: uuid
+          example: "person-uuid-456"
+      responses:
+        '200':
+          description: Person marked as pending successfully
+        '404':
+          description: Expense or person not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /expense/{slug}/people:
+    post:
+      summary: Add person to expense
+      description: Adds a new person to an existing expense record.
+      operationId: addPersonToExpense
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Unique slug identifier for the expense
+          schema:
+            type: string
+          example: "john-doe-burger-2024-01-15"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonRequest'
+            example:
+              name: "Alice Johnson"
+              amountOwed: 15.25
+              subtotal: 12.50
+              taxShare: 1.25
+              tipShare: 1.50
+              totalOwed: 15.25
+              isFinished: false
+      responses:
+        '200':
+          description: Person added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponse'
+        '400':
+          description: Bad request - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+components:
+  schemas:
+    ExpenseRequest:
+      type: object
+      required:
+        - payerName
+        - totalAmount
+        - subtotal
+        - tax
+        - tip
+        - items
+      properties:
+        payerName:
+          type: string
+          description: Name of the person who paid the bill
+          example: "John Doe"
+        totalAmount:
+          type: number
+          format: decimal
+          description: Total amount of the bill including tax and tip
+          example: 45.67
+        subtotal:
+          type: number
+          format: decimal
+          description: Subtotal before tax and tip
+          example: 38.50
+        tax:
+          type: number
+          format: decimal
+          description: Tax amount
+          example: 3.85
+        tip:
+          type: number
+          format: decimal
+          description: Tip amount
+          example: 3.32
+        items:
+          type: array
+          description: List of items on the bill
+          items:
+            $ref: '#/components/schemas/ItemRequest'
+        people:
+          type: array
+          description: List of people sharing the bill
+          items:
+            $ref: '#/components/schemas/PersonRequest'
+
+    ExpenseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the expense
+          example: "expense-uuid-123"
+        slug:
+          type: string
+          description: Unique slug for sharing the expense
+          example: "john-doe-burger-2024-01-15"
+        createdAt:
+          type: string
+          format: date-time
+          description: When the expense was created
+          example: "2024-01-15T14:30:00Z"
+        payerName:
+          type: string
+          description: Name of the person who paid the bill
+          example: "John Doe"
+        totalAmount:
+          type: number
+          format: decimal
+          description: Total amount of the bill
+          example: 45.67
+        subtotal:
+          type: number
+          format: decimal
+          description: Subtotal before tax and tip
+          example: 38.50
+        tax:
+          type: number
+          format: decimal
+          description: Tax amount
+          example: 3.85
+        tip:
+          type: number
+          format: decimal
+          description: Tip amount
+          example: 3.32
+        items:
+          type: array
+          description: List of items on the bill
+          items:
+            $ref: '#/components/schemas/ItemResponse'
+        people:
+          type: array
+          description: List of people sharing the bill
+          items:
+            $ref: '#/components/schemas/PersonResponse'
+
+    ItemRequest:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        name:
+          type: string
+          description: Name of the item
+          example: "Burger Deluxe"
+        price:
+          type: number
+          format: decimal
+          description: Price of the item
+          example: 15.99
+
+    ItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the item
+          example: "item-uuid-123"
+        name:
+          type: string
+          description: Name of the item
+          example: "Burger Deluxe"
+        price:
+          type: number
+          format: decimal
+          description: Price of the item
+          example: 15.99
+        claimedBy:
+          type: array
+          description: List of person IDs who have claimed this item
+          items:
+            type: string
+            format: uuid
+          example: ["person-uuid-456", "person-uuid-789"]
+
+    PersonRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the person
+          example: "John Doe"
+        itemsClaimed:
+          type: array
+          description: List of item IDs claimed by this person
+          items:
+            type: string
+          example: ["item-uuid-123", "item-uuid-456"]
+        amountOwed:
+          type: number
+          format: decimal
+          description: Total amount owed by this person
+          example: 22.84
+        subtotal:
+          type: number
+          format: decimal
+          description: Subtotal for this person's claimed items
+          example: 19.25
+        taxShare:
+          type: number
+          format: decimal
+          description: This person's share of the tax
+          example: 1.93
+        tipShare:
+          type: number
+          format: decimal
+          description: This person's share of the tip
+          example: 1.66
+        totalOwed:
+          type: number
+          format: decimal
+          description: Total amount owed including tax and tip
+          example: 22.84
+        isFinished:
+          type: boolean
+          description: Whether this person has finished paying
+          example: false
+
+    PersonResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the person
+          example: "person-uuid-456"
+        name:
+          type: string
+          description: Name of the person
+          example: "John Doe"
+        itemsClaimed:
+          type: array
+          description: List of item IDs claimed by this person
+          items:
+            type: string
+          example: ["item-uuid-123", "item-uuid-456"]
+        amountOwed:
+          type: number
+          format: decimal
+          description: Total amount owed by this person
+          example: 22.84
+        subtotal:
+          type: number
+          format: decimal
+          description: Subtotal for this person's claimed items
+          example: 19.25
+        taxShare:
+          type: number
+          format: decimal
+          description: This person's share of the tax
+          example: 1.93
+        tipShare:
+          type: number
+          format: decimal
+          description: This person's share of the tip
+          example: 1.66
+        totalOwed:
+          type: number
+          format: decimal
+          description: Total amount owed including tax and tip
+          example: 22.84
+        isFinished:
+          type: boolean
+          description: Whether this person has finished paying
+          example: false
+
+    ClaimItemRequest:
+      type: object
+      required:
+        - personId
+      properties:
+        personId:
+          type: string
+          format: uuid
+          description: Unique identifier for the person claiming the item
+          example: "person-uuid-456"
+
+    ApiError:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+          example: "2024-01-15T14:30:00Z"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Error message
+          example: "Validation failed for field 'payerName'"
+        path:
+          type: string
+          description: API path where the error occurred
+          example: "/expense"
+
+  examples:
+    CreateExpenseExample:
+      summary: Example of creating an expense
+      value:
+        payerName: "John Doe"
+        totalAmount: 45.67
+        subtotal: 38.50
+        tax: 3.85
+        tip: 3.32
+        items:
+          - name: "Burger Deluxe"
+            price: 15.99
+          - name: "Caesar Salad"
+            price: 12.50
+          - name: "Soft Drink"
+            price: 3.99
+          - name: "Coffee"
+            price: 6.02
+        people:
+          - name: "John Doe"
+            amountOwed: 22.84
+            subtotal: 19.25
+            taxShare: 1.93
+            tipShare: 1.66
+            totalOwed: 22.84
+            isFinished: false
+          - name: "Jane Smith"
+            amountOwed: 22.83
+            subtotal: 19.25
+            taxShare: 1.92
+            tipShare: 1.66
+            totalOwed: 22.83
+            isFinished: false
+
+    ExpenseResponseExample:
+      summary: Example of expense response
+      value:
+        id: "expense-uuid-123"
+        slug: "john-doe-burger-2024-01-15"
+        createdAt: "2024-01-15T14:30:00Z"
+        payerName: "John Doe"
+        totalAmount: 45.67
+        subtotal: 38.50
+        tax: 3.85
+        tip: 3.32
+        items:
+          - id: "item-uuid-123"
+            name: "Burger Deluxe"
+            price: 15.99
+            claimedBy: ["person-uuid-456"]
+          - id: "item-uuid-456"
+            name: "Caesar Salad"
+            price: 12.50
+            claimedBy: ["person-uuid-789"]
+        people:
+          - id: "person-uuid-456"
+            name: "John Doe"
+            itemsClaimed: ["item-uuid-123"]
+            amountOwed: 15.99
+            subtotal: 15.99
+            taxShare: 1.60
+            tipShare: 1.38
+            totalOwed: 18.97
+            isFinished: false
+          - id: "person-uuid-789"
+            name: "Jane Smith"
+            itemsClaimed: ["item-uuid-456"]
+            amountOwed: 12.50
+            subtotal: 12.50
+            taxShare: 1.25
+            tipShare: 1.08
+            totalOwed: 14.83
+            isFinished: false
+
+tags:
+  - name: Expenses
+    description: Operations for managing expense records
+  - name: Items
+    description: Operations for managing bill items and claims
+  - name: People
+    description: Operations for managing people and their payment status
