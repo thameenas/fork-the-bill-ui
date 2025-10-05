@@ -2,9 +2,7 @@
 export const API_CONFIG = {
   // Base URLs for different environments
   // In development, use proxy (empty string), in production use full URL
-//   BASE_URL: process.env.REACT_APP_API_BASE_URL || (process.env.NODE_ENV === 'development' ? '' : 'http://localhost:8080'),
-  BASE_URL: 'http://localhost:8080',
-
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || (process.env.NODE_ENV === 'local' ? 'http://localhost:8080' : ''),
   // API endpoints
   ENDPOINTS: {
     // Expense endpoints
