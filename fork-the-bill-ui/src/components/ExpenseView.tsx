@@ -4,8 +4,6 @@ import QRCode from 'react-qr-code';
 import { 
   claimItem, 
   unclaimItem, 
-  updatePersonCompletionStatus,
-  addPersonToExpense 
 } from '../api/client';
 
 interface ExpenseViewProps {
@@ -41,14 +39,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   const getAllPeople = () => {
     return expense.people.map(person => person.name);
-  };
-
-  const getPeopleWhoClaimedItems = () => {
-    const peopleSet = new Set<string>();
-    displayItems.forEach(item => {
-      item.claimedBy.forEach(person => peopleSet.add(person));
-    });
-    return Array.from(peopleSet);
   };
 
   // Get completion status from expense.people

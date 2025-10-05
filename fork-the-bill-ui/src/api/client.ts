@@ -3,16 +3,13 @@ import { API_CONFIG, getApiUrl } from './config';
 import {
   ExpenseResponse,
   ExpenseRequest,
-  ItemResponse,
-  PersonResponse,
   ClaimItemRequest,
   PersonRequest,
   ApiError,
   Expense,
   Item,
   Person,
-  PersonNameToIdMap,
-  ItemNameToIdMap
+  PersonNameToIdMap
 } from '../types';
 
 // Create axios instance with default configuration
