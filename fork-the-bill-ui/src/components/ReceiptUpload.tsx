@@ -26,6 +26,7 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
       setError(error.message || 'Failed to process receipt. Please try again.');
     } finally {
       setIsUploading(false);
+      event.target.value = '';
     }
   };
 
