@@ -43,7 +43,7 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
             id="payerName"
             value={payerName}
             onChange={(e) => setPayerName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
             placeholder="Enter your name"
             required
             disabled={isUploading}
@@ -72,7 +72,7 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
               <div className="text-gray-600">
                 {isUploading ? (
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600"></div>
                     <div className="text-center">
                       <p className="font-medium">Processing receipt...</p>
                       <p className="text-sm text-gray-500 mt-1">This may take a few seconds</p>

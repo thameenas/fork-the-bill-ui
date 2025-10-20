@@ -351,7 +351,7 @@ const ExpenseView: React.FC = () => {
           <p className="text-red-600 mb-4">Error: {error}</p>
           <button
             onClick={() => window.location.href = '/'}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Go Home
           </button>
@@ -367,7 +367,7 @@ const ExpenseView: React.FC = () => {
           <p className="text-gray-600 mb-4">Expense not found</p>
           <button
             onClick={() => window.location.href = '/'}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Go Home
           </button>
@@ -419,7 +419,7 @@ const ExpenseView: React.FC = () => {
                   <span className="font-bold">Tax: ₹{editingTax.toFixed(2)}</span>
                   <button
                     onClick={() => setIsEditingTax(true)}
-                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
                   >
                     Edit
                   </button>
@@ -456,7 +456,7 @@ const ExpenseView: React.FC = () => {
                   <span className="font-bold">Service Charge: ₹{editingServiceCharge.toFixed(2)}</span>
                   <button
                     onClick={() => setIsEditingServiceCharge(true)}
-                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
                   >
                     Edit
                   </button>
@@ -493,7 +493,7 @@ const ExpenseView: React.FC = () => {
                   <span className="font-bold">Discount: ₹{(editingDiscount || 0).toFixed(2)}</span>
                   <button
                     onClick={() => setIsEditingDiscount(true)}
-                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
                   >
                     Edit
                   </button>
@@ -515,7 +515,7 @@ const ExpenseView: React.FC = () => {
           )}
           <button
             onClick={() => setShowQR(!showQR)}
-            className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+            className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
           >
             {showQR ? 'Hide QR' : 'Show QR'}
           </button>
@@ -527,7 +527,7 @@ const ExpenseView: React.FC = () => {
             }}
             className="px-3 py-2 sm:px-4 sm:py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
           >
-            {linkCopied ? 'Link copied!' : 'Copy Link'}
+            {linkCopied ? 'Link Copied!' : 'Copy Link'}
           </button>
         </div>
       </div>
@@ -555,7 +555,7 @@ const ExpenseView: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{personName}</span>
                     {isCurrentUser && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-blue-200 text-blue-900 px-2 py-1 rounded-full">
                         You
                       </span>
                     )}
@@ -704,7 +704,7 @@ const ExpenseView: React.FC = () => {
                       />
                       <button
                         onClick={() => handleDeleteItem(item.id)}
-                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                        className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                       >
                         ×
                       </button>
@@ -715,7 +715,7 @@ const ExpenseView: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-medium text-gray-800">{item.name}</h4>
                       {hasMultipleQuantities(item) && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-200 text-blue-900">
                           {getQuantityBadgeText(item)}
                         </span>
                       )}
@@ -740,8 +740,8 @@ const ExpenseView: React.FC = () => {
                     isClaiming === item.id
                       ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                       : item.claimedBy.includes(selectedPerson)
-                      ? 'bg-red-500 text-white hover:bg-red-600'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
                   {isClaiming === item.id ? (
@@ -765,7 +765,7 @@ const ExpenseView: React.FC = () => {
                   {item.claimedBy.map((person, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-200 text-blue-900"
                     >
                       {person}
                     </span>
