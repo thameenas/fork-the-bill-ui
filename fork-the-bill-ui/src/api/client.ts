@@ -151,37 +151,22 @@ export const createExpense = async (expenseData: ExpenseRequest): Promise<Expens
 };
 
 export const createExpenseFromImage = async (file: File, payerName: string): Promise<Expense> => {
-  try {
     const formData = new FormData();
     formData.append('bill', file);
     formData.append('payerName', payerName);
 
-    console.log('📤 Uploading image:', file.name, 'for payer:', payerName);
-    
     const response: AxiosResponse<ExpenseResponse> = await apiClient.post(
-      getApiUrl(API_CONFIG.ENDPOINTS.EXPENSE_UPLOAD),
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 30000, // 30 second timeout for image processing
-      }
+        getApiUrl(API_CONFIG.ENDPOINTS.EXPENSE_UPLOAD),
+        formData,
+        {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            timeout: 30000,
+        }
     );
-    
-    console.log('✅ Image upload successful:', response.status);
+
     return convertExpenseResponseToExpense(response.data);
-  } catch (error: any) {
-    console.error('❌ Failed to create expense from image:', error);
-    
-    // If it's a network error but we got a 201, try to handle it
-    if (error.message === 'Network Error' && error.status === 201) {
-      console.log('🔄 Retrying due to network error with 201 status...');
-      // You could implement a retry logic here if needed
-    }
-    
-    throw error;
-  }
 };
 
 export const updateExpense = async (slug: string, expenseData: ExpenseRequest): Promise<Expense> => {
