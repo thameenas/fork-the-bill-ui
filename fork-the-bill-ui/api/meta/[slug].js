@@ -4,24 +4,16 @@ export const config = {
 
 export default async function handler(request) {
   const url = new URL(request.url);
-  // Extract slug from the API path: /api/meta/[slug] -> slug
-  const pathParts = url.pathname.split('/');
-  const slug = pathParts[pathParts.length - 1];
+  const slug = url.pathname.split('/').pop();
   const userAgent = request.headers.get('user-agent') || '';
-  
-  console.log(`Meta API called for slug: ${slug}, User-Agent: ${userAgent}`);
   
   // Check if it's a social media crawler
   const isCrawler = /facebookexternalhit|twitterbot|whatsapp|linkedinbot|slackbot|telegrambot|discordbot/i.test(userAgent);
   
   if (!isCrawler) {
     // Regular users get redirected to the React app
-    const redirectUrl = `${url.origin}/${slug}`;
-    console.log(`Redirecting regular user to: ${redirectUrl}`);
-    return Response.redirect(redirectUrl, 302);
+    return Response.redirect(url.origin + '/' + slug, 302);
   }
-  
-  console.log(`Processing crawler request for slug: ${slug}`);
   
   try {
     // Get the API base URL from environment or use a default

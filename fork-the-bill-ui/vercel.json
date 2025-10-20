@@ -9,50 +9,41 @@
       }
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/test-routing",
-      "destination": "/api/test-routing"
+      "src": "/favicon.ico",
+      "dest": "/favicon.ico",
+      "headers": {
+        "cache-control": "public, max-age=86400"
+      }
     },
     {
-      "source": "/([^/]+)",
+      "src": "/favicon.png",
+      "dest": "/favicon.png",
+      "headers": {
+        "cache-control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "s-maxage=31536000,immutable"
+      }
+    },
+    {
+      "src": "/([^/]+)$",
       "has": [
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(facebookexternalhit|twitterbot|whatsapp|linkedinbot|slackbot|telegrambot|discordbot).*"
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|linkedinbot|slackbot|telegrambot|discordbot).*"
         }
       ],
-      "destination": "/api/meta/$1"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/favicon.ico",
-      "headers": [
-        {
-          "key": "cache-control",
-          "value": "public, max-age=86400"
-        }
-      ]
+      "dest": "/api/meta/$1"
     },
     {
-      "source": "/favicon.png", 
-      "headers": [
-        {
-          "key": "cache-control",
-          "value": "public, max-age=86400"
-        }
-      ]
-    },
-    {
-      "source": "/static/(.*)",
-      "headers": [
-        {
-          "key": "cache-control",
-          "value": "s-maxage=31536000,immutable"
-        }
-      ]
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
