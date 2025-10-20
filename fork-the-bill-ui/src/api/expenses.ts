@@ -10,6 +10,6 @@ export {
   markPersonAsFinished,
   markPersonAsPending,
   updateExpenseItems,
-  updateExpenseTaxTip,
+  updateExpenseTaxServiceCharge,
   updatePersonCompletionStatus,
 } from './client';

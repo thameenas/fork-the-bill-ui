@@ -60,7 +60,7 @@ export const convertExpenseResponseToExpense = (response: ExpenseResponse): Expe
         amountOwed: person.amountOwed,
         subtotal: person.subtotal,
         taxShare: person.taxShare,
-        tipShare: person.tipShare,
+        serviceChargeShare: person.serviceChargeShare,
         totalOwed: person.totalOwed,
         isFinished: person.finished,
     }));
@@ -74,7 +74,7 @@ export const convertExpenseResponseToExpense = (response: ExpenseResponse): Expe
         totalAmount: response.totalAmount,
         subtotal: response.subtotal,
         tax: response.tax,
-        tip: response.tip,
+        serviceCharge: response.serviceCharge,
         items,
         people,
     };
@@ -103,7 +103,7 @@ export const convertExpenseToExpenseRequest = (expense: Expense): ExpenseRequest
         amountOwed: person.amountOwed,
         subtotal: person.subtotal,
         taxShare: person.taxShare,
-        tipShare: person.tipShare,
+        serviceChargeShare: person.serviceChargeShare,
         totalOwed: person.totalOwed,
         isFinished: person.isFinished,
     }));
@@ -113,7 +113,7 @@ export const convertExpenseToExpenseRequest = (expense: Expense): ExpenseRequest
         totalAmount: expense.totalAmount,
         subtotal: expense.subtotal,
         tax: expense.tax,
-        tip: expense.tip,
+        serviceCharge: expense.serviceCharge,
         items,
         people,
     };
@@ -289,7 +289,7 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
             totalAmount: currentExpense.totalAmount,
             subtotal: currentExpense.subtotal,
             tax: currentExpense.tax,
-            tip: currentExpense.tip,
+            serviceCharge: currentExpense.serviceCharge,
             items: itemRequests,
             people: currentExpense.people.map(person => ({
                 name: person.name,
@@ -297,7 +297,7 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
                 amountOwed: person.amountOwed,
                 subtotal: person.subtotal,
                 taxShare: person.taxShare,
-                tipShare: person.tipShare,
+                serviceChargeShare: person.serviceChargeShare,
                 totalOwed: person.totalOwed,
                 isFinished: person.isFinished,
             })),
@@ -310,7 +310,7 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
     }
 };
 
-export const updateExpenseTaxTip = async (slug: string, tax: number, tip: number): Promise<Expense> => {
+export const updateExpenseTaxServiceCharge = async (slug: string, tax: number, serviceCharge: number): Promise<Expense> => {
     try {
         // Get current expense
         const currentExpense = await getExpense(slug);
@@ -318,10 +318,10 @@ export const updateExpenseTaxTip = async (slug: string, tax: number, tip: number
         // Create updated expense request
         const expenseRequest: ExpenseRequest = {
             payerName: currentExpense.payerName,
-            totalAmount: currentExpense.subtotal + tax + tip,
+            totalAmount: currentExpense.subtotal + tax + serviceCharge,
             subtotal: currentExpense.subtotal,
             tax,
-            tip,
+            serviceCharge,
             items: currentExpense.items.map(item => ({
                 id: item.id,
                 name: item.name,
@@ -333,7 +333,7 @@ export const updateExpenseTaxTip = async (slug: string, tax: number, tip: number
                 amountOwed: person.amountOwed,
                 subtotal: person.subtotal,
                 taxShare: person.taxShare,
-                tipShare: person.tipShare,
+                serviceChargeShare: person.serviceChargeShare,
                 totalOwed: person.totalOwed,
                 isFinished: person.isFinished,
             })),
@@ -341,7 +341,7 @@ export const updateExpenseTaxTip = async (slug: string, tax: number, tip: number
 
         return await updateExpense(slug, expenseRequest);
     } catch (error) {
-        console.error('Failed to update expense tax/tip:', error);
+        console.error('Failed to update expense tax/serviceCharge:', error);
         throw error;
     }
 };

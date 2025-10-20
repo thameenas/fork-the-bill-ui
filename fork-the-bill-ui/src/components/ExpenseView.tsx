@@ -7,7 +7,7 @@ import {
   unclaimItem, 
   getExpense,
   updateExpenseItems,
-  updateExpenseTaxTip,
+  updateExpenseTaxServiceCharge,
   updatePersonCompletionStatus,
   addPersonToExpense,
 } from '../api/client';
@@ -27,7 +27,7 @@ const ExpenseView: React.FC = () => {
   const [isClaiming, setIsClaiming] = useState<string | null>(null);
   const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>([]);
   const [editingTax, setEditingTax] = useState(0);
-  const [editingTip, setEditingTip] = useState(0);
+  const [editingServiceCharge, setEditingServiceCharge] = useState(0);
 
   useEffect(() => {
     const loadExpense = async () => {
@@ -53,7 +53,7 @@ const ExpenseView: React.FC = () => {
       setRealTimeUpdates(expense.items);
       setEditingItems(expense.items);
       setEditingTax(expense.tax);
-      setEditingTip(expense.tip);
+      setEditingServiceCharge(expense.serviceCharge);
     }
   }, [expense]);
 
@@ -191,9 +191,9 @@ const ExpenseView: React.FC = () => {
         setExpense(updatedExpense);
       }
       
-      const taxTipChanged = editingTax !== expense.tax || editingTip !== expense.tip;
+      const taxTipChanged = editingTax !== expense.tax || editingServiceCharge !== expense.serviceCharge;
       if (taxTipChanged) {
-        const updatedExpense = await updateExpenseTaxTip(expense.slug, editingTax, editingTip);
+        const updatedExpense = await updateExpenseTaxServiceCharge(expense.slug, editingTax, editingServiceCharge);
         setExpense(updatedExpense);
       }
       
@@ -207,7 +207,7 @@ const ExpenseView: React.FC = () => {
     if (expense) {
       setEditingItems(expense.items);
       setEditingTax(expense.tax);
-      setEditingTip(expense.tip);
+      setEditingServiceCharge(expense.serviceCharge);
     }
     setIsEditMode(false);
   };
@@ -277,7 +277,7 @@ const ExpenseView: React.FC = () => {
 
   const shareUrl = `${window.location.origin}/${expense.slug}`;
   const subtotal = displayItems.reduce((sum, item) => sum + item.price, 0);
-  const totalAmount = subtotal + editingTax + editingTip;
+  const totalAmount = subtotal + editingTax + editingServiceCharge;
 
   const allPeople = getAllPeople();
   const finishedPeople = allPeople.filter(person => getPersonCompletionStatus(person));
@@ -292,7 +292,7 @@ const ExpenseView: React.FC = () => {
           <div className="text-sm text-gray-500 space-y-1">
             <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
             <p>Tax: ₹{editingTax.toFixed(2)}</p>
-            <p>Tip: ₹{editingTip.toFixed(2)}</p>
+            <p>Service Charge: ₹{editingServiceCharge.toFixed(2)}</p>
             <p className="font-semibold">Total: ₹{totalAmount.toFixed(2)}</p>
           </div>
         </div>
@@ -394,9 +394,9 @@ const ExpenseView: React.FC = () => {
       {/* Edit Mode - Mobile optimized */}
       {isEditMode && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Edit Items & Tax/Tip</h3>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Edit Items & Tax/Service Charge</h3>
           
-          {/* Tax and Tip editing */}
+          {/* Tax and Service Charge editing */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -413,12 +413,12 @@ const ExpenseView: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tip Amount
+                Service Charge Amount
               </label>
               <input
                 type="number"
-                value={editingTip}
-                onChange={(e) => setEditingTip(parseFloat(e.target.value) || 0)}
+                value={editingServiceCharge}
+                onChange={(e) => setEditingServiceCharge(parseFloat(e.target.value) || 0)}
                 step="0.01"
                 min="0"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -615,8 +615,8 @@ const ExpenseView: React.FC = () => {
                   <span>₹{person.taxShare.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tip ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
-                  <span>₹{person.tipShare.toFixed(2)}</span>
+                  <span>Service Charge ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
+                  <span>₹{person.serviceChargeShare.toFixed(2)}</span>
                 </div>
               </div>
             </div>

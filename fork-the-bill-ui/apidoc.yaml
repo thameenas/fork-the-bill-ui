@@ -12,7 +12,7 @@ info:
     - Split bills among multiple people
     - Claim and unclaim specific items
     - Track payment status for each person
-    - Calculate proportional tax and tip sharing
+    - Calculate proportional tax and service charge sharing
     
     ## Authentication
     Currently, this API does not require authentication. All endpoints are publicly accessible.
@@ -41,7 +41,7 @@ paths:
               totalAmount: 45.67
               subtotal: 38.50
               tax: 3.85
-              tip: 3.32
+              serviceCharge: 3.32
               items:
                 - name: "Burger Deluxe"
                   price: 15.99
@@ -56,14 +56,14 @@ paths:
                   amountOwed: 22.84
                   subtotal: 19.25
                   taxShare: 1.93
-                  tipShare: 1.66
+                  serviceChargeShare: 1.66
                   totalOwed: 22.84
                   isFinished: false
                 - name: "Jane Smith"
                   amountOwed: 22.83
                   subtotal: 19.25
                   taxShare: 1.92
-                  tipShare: 1.66
+                  serviceChargeShare: 1.66
                   totalOwed: 22.83
                   isFinished: false
       responses:
@@ -91,7 +91,7 @@ paths:
       summary: Create expense from bill image
       description: |
         Uploads a bill image and uses AI to automatically parse the bill data including items, prices, and totals.
-        The AI will extract restaurant information, items, and calculate subtotal, tax, tip, and total amounts.
+        The AI will extract restaurant information, items, and calculate subtotal, tax, service charge, and total amounts.
       operationId: createExpenseFromImage
       requestBody:
         required: true
@@ -408,7 +408,7 @@ paths:
               amountOwed: 15.25
               subtotal: 12.50
               taxShare: 1.25
-              tipShare: 1.50
+              serviceChargeShare: 1.50
               totalOwed: 15.25
               isFinished: false
       responses:
@@ -456,22 +456,22 @@ components:
         totalAmount:
           type: number
           format: decimal
-          description: Total amount of the bill including tax and tip
+          description: Total amount of the bill including tax and service charge
           example: 45.67
         subtotal:
           type: number
           format: decimal
-          description: Subtotal before tax and tip
+          description: Subtotal before tax and service charge
           example: 38.50
         tax:
           type: number
           format: decimal
           description: Tax amount
           example: 3.85
-        tip:
+        serviceCharge:
           type: number
           format: decimal
-          description: Tip amount
+          description: Service charge amount
           example: 3.32
         items:
           type: array
@@ -512,17 +512,17 @@ components:
         subtotal:
           type: number
           format: decimal
-          description: Subtotal before tax and tip
+          description: Subtotal before tax and service charge
           example: 38.50
         tax:
           type: number
           format: decimal
           description: Tax amount
           example: 3.85
-        tip:
+        serviceCharge:
           type: number
           format: decimal
-          description: Tip amount
+          description: Service charge amount
           example: 3.32
         items:
           type: array
@@ -605,15 +605,15 @@ components:
           format: decimal
           description: This person's share of the tax
           example: 1.93
-        tipShare:
+        serviceChargeShare:
           type: number
           format: decimal
-          description: This person's share of the tip
+          description: This person's share of the service charge
           example: 1.66
         totalOwed:
           type: number
           format: decimal
-          description: Total amount owed including tax and tip
+          description: Total amount owed including tax and service charge
           example: 22.84
         isFinished:
           type: boolean
@@ -653,15 +653,15 @@ components:
           format: decimal
           description: This person's share of the tax
           example: 1.93
-        tipShare:
+        serviceChargeShare:
           type: number
           format: decimal
-          description: This person's share of the tip
+          description: This person's share of the service charge
           example: 1.66
         totalOwed:
           type: number
           format: decimal
-          description: Total amount owed including tax and tip
+          description: Total amount owed including tax and service charge
           example: 22.84
         isFinished:
           type: boolean
@@ -712,7 +712,7 @@ components:
         totalAmount: 45.67
         subtotal: 38.50
         tax: 3.85
-        tip: 3.32
+        serviceCharge: 3.32
         items:
           - name: "Burger Deluxe"
             price: 15.99
@@ -727,14 +727,14 @@ components:
             amountOwed: 22.84
             subtotal: 19.25
             taxShare: 1.93
-            tipShare: 1.66
+            serviceChargeShare: 1.66
             totalOwed: 22.84
             isFinished: false
           - name: "Jane Smith"
             amountOwed: 22.83
             subtotal: 19.25
             taxShare: 1.92
-            tipShare: 1.66
+            serviceChargeShare: 1.66
             totalOwed: 22.83
             isFinished: false
 
@@ -748,7 +748,7 @@ components:
         totalAmount: 45.67
         subtotal: 38.50
         tax: 3.85
-        tip: 3.32
+        serviceCharge: 3.32
         items:
           - id: "item-uuid-123"
             name: "Burger Deluxe"
@@ -765,7 +765,7 @@ components:
             amountOwed: 15.99
             subtotal: 15.99
             taxShare: 1.60
-            tipShare: 1.38
+            serviceChargeShare: 1.38
             totalOwed: 18.97
             isFinished: false
           - id: "person-uuid-789"
@@ -774,7 +774,7 @@ components:
             amountOwed: 12.50
             subtotal: 12.50
             taxShare: 1.25
-            tipShare: 1.08
+            serviceChargeShare: 1.08
             totalOwed: 14.83
             isFinished: false
 
