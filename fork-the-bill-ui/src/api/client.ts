@@ -277,11 +277,21 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
         const currentExpense = await getExpense(slug);
 
         // Convert items to request format
-        const itemRequests = items.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-        }));
+        const itemRequests = items.map(item => {
+            const itemRequest: any = {
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                totalQuantity: item.totalQuantity,
+            };
+            
+            // Only include id for existing items (not new ones created locally)
+            if (item.id && !item.id.startsWith('new-')) {
+                itemRequest.id = item.id;
+            }
+            
+            return itemRequest;
+        });
 
         // Create updated expense request
         const expenseRequest: ExpenseRequest = {

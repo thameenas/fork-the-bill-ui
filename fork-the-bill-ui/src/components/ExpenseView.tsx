@@ -24,6 +24,7 @@ const ExpenseView: React.FC = () => {
   const [editingItems, setEditingItems] = useState<Item[]>([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('1');
   const [isClaiming, setIsClaiming] = useState<string | null>(null);
   const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>([]);
   const [editingTax, setEditingTax] = useState(0);
@@ -61,13 +62,23 @@ const ExpenseView: React.FC = () => {
 
 
   const displayItems = isEditMode ? editingItems : realTimeUpdates;
+  
+  // Sort items to ensure consistent ordering, especially for items with same name
+  const sortedDisplayItems = [...displayItems].sort((a, b) => {
+    // First sort by name
+    if (a.name !== b.name) {
+      return a.name.localeCompare(b.name);
+    }
+    // For items with same name, sort by ID to ensure consistent portion numbering
+    return a.id.localeCompare(b.id);
+  });
 
   const hasMultipleQuantities = (item: Item) => {
     return item.quantity !== item.totalQuantity;
   };
 
   const getPortionNumber = (item: Item, allItems: Item[]) => {
-    // Find all items with the same name
+    // Find all items with the same name that have multiple quantities
     const sameNameItems = allItems.filter(i => i.name === item.name && hasMultipleQuantities(i));
     
     // If there's only one item with this name, or it's not split, return 1
@@ -75,18 +86,15 @@ const ExpenseView: React.FC = () => {
       return 1;
     }
     
-    // Sort by ID to ensure consistent ordering
-    const sortedItems = sameNameItems.sort((a, b) => a.id.localeCompare(b.id));
-    
-    // Find the index of current item and add 1 (since arrays are 0-indexed)
-    const portionNumber = sortedItems.findIndex(i => i.id === item.id) + 1;
+    // Items are already sorted by name then ID, so we can use the order directly
+    const portionNumber = sameNameItems.findIndex(i => i.id === item.id) + 1;
     
     return portionNumber;
   };
 
   // Helper function to get quantity badge text
   const getQuantityBadgeText = (item: Item) => {
-    const portionNumber = getPortionNumber(item, displayItems);
+    const portionNumber = getPortionNumber(item, sortedDisplayItems);
     return `${portionNumber} of ${item.totalQuantity}`;
   };
 
@@ -164,23 +172,32 @@ const ExpenseView: React.FC = () => {
     setEditingItems(prev => prev.filter(item => item.id !== itemId));
   };
 
-  //Todo: Fix contract here
   const handleAddItem = () => {
-    if (!newItemName.trim() || !newItemPrice.trim()) return;
+    if (!newItemName.trim() || !newItemPrice.trim() || !newItemQuantity.trim()) return;
 
-    const newItem: Item = {
-      id: `item-${Date.now()}`,
-      name: newItemName.trim(),
-      price: parseFloat(newItemPrice) || 0,
-      quantity: 1,
-      totalQuantity: 1,
-      claimedBy: []
-    };
+    const quantity = parseInt(newItemQuantity) || 1;
+    const price = parseFloat(newItemPrice) || 0;
+    const name = newItemName.trim();
+    
+    // Create multiple items if quantity > 1
+    const newItems: Item[] = [];
+    for (let i = 0; i < quantity; i++) {
+      const newItem: Item = {
+        id: `new-${Date.now()}-${i}`, // Local UI identifier, not sent to API
+        name: name,
+        price: price,
+        quantity: 1,
+        totalQuantity: quantity,
+        claimedBy: []
+      };
+      newItems.push(newItem);
+    }
 
-    setEditingItems(prev => [...prev, newItem]);
-    setRealTimeUpdates(prev => [...prev, newItem]);
+    setEditingItems(prev => [...prev, ...newItems]);
+    setRealTimeUpdates(prev => [...prev, ...newItems]);
     setNewItemName('');
     setNewItemPrice('');
+    setNewItemQuantity('1');
   };
 
   const handleSaveChanges = async () => {
@@ -308,7 +325,7 @@ const ExpenseView: React.FC = () => {
   }
 
   const shareUrl = `${window.location.origin}/${expense.slug}`;
-  const subtotal = displayItems.reduce((sum, item) => sum + item.price, 0);
+  const subtotal = sortedDisplayItems.reduce((sum, item) => sum + item.price, 0);
   const totalAmount = subtotal + editingTax + editingServiceCharge;
 
   const allPeople = getAllPeople();
@@ -407,7 +424,7 @@ const ExpenseView: React.FC = () => {
               onClick={() => setIsEditMode(true)}
               className="px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 text-sm"
             >
-              Edit Items
+              Add/Edit Items
             </button>
           )}
           <button
@@ -498,7 +515,10 @@ const ExpenseView: React.FC = () => {
       {/* Edit Mode - Mobile optimized */}
       {isEditMode && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Edit Items</h3>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Add/Edit Items</h3>
+          
+          {/* Instructions */}
+          <p className="text-sm text-gray-600 mb-3">Enter new item below or update existing items in the list</p>
           
           {/* Add new item form - Mobile optimized */}
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -506,7 +526,7 @@ const ExpenseView: React.FC = () => {
               type="text"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
-              placeholder="Item name"
+              placeholder="Enter new item name"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
@@ -518,9 +538,17 @@ const ExpenseView: React.FC = () => {
               min="0"
               className="w-full sm:w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <input
+              type="number"
+              value={newItemQuantity}
+              onChange={(e) => setNewItemQuantity(e.target.value)}
+              placeholder="Qty"
+              min="1"
+              className="w-full sm:w-16 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
             <button
               onClick={handleAddItem}
-              disabled={!newItemName.trim() || !newItemPrice.trim()}
+              disabled={!newItemName.trim() || !newItemPrice.trim() || !newItemQuantity.trim()}
               className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               Add
@@ -563,7 +591,7 @@ const ExpenseView: React.FC = () => {
       {/* Items List - Mobile optimized */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-800">Items</h3>
-        {displayItems.map((item) => (
+        {sortedDisplayItems.map((item) => (
           <div key={item.id} className="border border-gray-200 rounded-lg p-4">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
               <div className="flex-1">
