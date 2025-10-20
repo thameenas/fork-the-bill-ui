@@ -19,16 +19,11 @@ const apiClient = axios.create({
     headers: API_CONFIG.DEFAULT_HEADERS,
 });
 
-// Response interceptor for error handling
 apiClient.interceptors.response.use(
     (response) => {
-        console.log('✅ API Response:', response.status, response.config.url);
         return response;
     },
     (error: AxiosError) => {
-        console.log('❌ API Error:', error.code, error.message, error.response?.status);
-        console.log('❌ API Error response data:', error.response?.data);
-
         const responseData = error.response?.data as any;
         const apiError: ApiError = {
             timestamp: new Date().toISOString(),
@@ -37,7 +32,6 @@ apiClient.interceptors.response.use(
             message: responseData?.message || error.message || 'An error occurred',
             path: error.config?.url || 'Unknown path',
         };
-        console.log('❌ Throwing API Error:', apiError);
         throw apiError;
     }
 );
