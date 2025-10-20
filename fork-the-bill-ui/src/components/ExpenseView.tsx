@@ -32,6 +32,19 @@ const ExpenseView: React.FC = () => {
   const [editingServiceCharge, setEditingServiceCharge] = useState(0);
   const [isEditingTax, setIsEditingTax] = useState(false);
   const [isEditingServiceCharge, setIsEditingServiceCharge] = useState(false);
+  const [expandedPersons, setExpandedPersons] = useState<Set<string>>(new Set());
+
+  const togglePersonExpansion = (personName: string) => {
+    setExpandedPersons(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(personName)) {
+        newSet.delete(personName);
+      } else {
+        newSet.add(personName);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     const loadExpense = async () => {
@@ -694,34 +707,66 @@ const ExpenseView: React.FC = () => {
         ))}
       </div>
 
-      {/* Split Summary - Mobile optimized */}
-      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Split Summary</h3>
-        <div className="space-y-4">
-          {expense.people.map((person) => (
-            <div key={person.name} className="border-b border-gray-200 pb-3 last:border-b-0">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium text-lg">{person.name}</span>
-                <span className="text-lg font-semibold text-blue-600">
-                  ₹{person.totalOwed.toFixed(2)}
-                </span>
-              </div>
-              <div className="text-sm text-gray-600 space-y-1">
-                <div className="flex justify-between">
-                  <span>Items:</span>
-                  <span>₹{person.subtotal.toFixed(2)}</span>
+      <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-4 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-bold text-gray-800">Split Summary</h3>
+        </div>
+        
+        <div className="divide-y divide-gray-100">
+          {expense.people
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((person) => {
+              const isExpanded = expandedPersons.has(person.name);
+              return (
+                <div key={person.name} className="p-4">
+                  {/* Person Header - Clickable */}
+                  <div 
+                    className="flex justify-between items-center cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded"
+                    onClick={() => togglePersonExpansion(person.name)}
+                  >
+                    <div className="flex items-center">
+                      <h4 className="font-semibold text-lg text-gray-800">{person.name}</h4>
+                      <svg 
+                        className={`w-4 h-4 ml-2 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    <div className="text-xl font-bold text-blue-600">
+                      ₹{person.totalOwed.toFixed(2)}
+                    </div>
+                  </div>
+                  
+                  {/* Breakdown Details - Collapsible */}
+                  {isExpanded && (
+                    <div className="mt-3 space-y-2 text-sm">
+                      <div className="flex justify-between text-gray-600">
+                        <span>Items:</span>
+                        <span>₹{person.subtotal.toFixed(2)}</span>
+                      </div>
+                      
+                      {person.taxShare > 0 && (
+                        <div className="flex justify-between text-gray-600">
+                          <span>Tax:</span>
+                          <span>₹{person.taxShare.toFixed(2)}</span>
+                        </div>
+                      )}
+                      
+                      {person.serviceChargeShare > 0 && (
+                        <div className="flex justify-between text-gray-600">
+                          <span>Service Charge:</span>
+                          <span>₹{person.serviceChargeShare.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between">
-                  <span>Tax:</span>
-                  <span>₹{person.taxShare.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Service Charge:</span>
-                  <span>₹{person.serviceChargeShare.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
         </div>
       </div>
       </div>
