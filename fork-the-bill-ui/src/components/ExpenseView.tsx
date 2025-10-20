@@ -59,6 +59,34 @@ const ExpenseView: React.FC = () => {
 
   const displayItems = isEditMode ? editingItems : realTimeUpdates;
 
+  const hasMultipleQuantities = (item: Item) => {
+    return item.quantity !== item.totalQuantity;
+  };
+
+  const getPortionNumber = (item: Item, allItems: Item[]) => {
+    // Find all items with the same name
+    const sameNameItems = allItems.filter(i => i.name === item.name && hasMultipleQuantities(i));
+    
+    // If there's only one item with this name, or it's not split, return 1
+    if (sameNameItems.length <= 1) {
+      return 1;
+    }
+    
+    // Sort by ID to ensure consistent ordering
+    const sortedItems = sameNameItems.sort((a, b) => a.id.localeCompare(b.id));
+    
+    // Find the index of current item and add 1 (since arrays are 0-indexed)
+    const portionNumber = sortedItems.findIndex(i => i.id === item.id) + 1;
+    
+    return portionNumber;
+  };
+
+  // Helper function to get quantity badge text
+  const getQuantityBadgeText = (item: Item) => {
+    const portionNumber = getPortionNumber(item, displayItems);
+    return `${portionNumber} of ${item.totalQuantity}`;
+  };
+
   const getAllPeople = () => {
     return expense?.people?.map(person => person.name) || [];
   };
@@ -491,7 +519,14 @@ const ExpenseView: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <h4 className="font-medium text-gray-800">{item.name}</h4>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-medium text-gray-800">{item.name}</h4>
+                      {hasMultipleQuantities(item) && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {getQuantityBadgeText(item)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600">
                       ₹{item.price.toFixed(2)}
                       {getItemClaimCount(item) > 0 && (
