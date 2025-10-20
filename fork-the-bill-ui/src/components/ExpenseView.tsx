@@ -28,6 +28,8 @@ const ExpenseView: React.FC = () => {
   const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>([]);
   const [editingTax, setEditingTax] = useState(0);
   const [editingServiceCharge, setEditingServiceCharge] = useState(0);
+  const [isEditingTax, setIsEditingTax] = useState(false);
+  const [isEditingServiceCharge, setIsEditingServiceCharge] = useState(false);
 
   useEffect(() => {
     const loadExpense = async () => {
@@ -191,12 +193,6 @@ const ExpenseView: React.FC = () => {
         setExpense(updatedExpense);
       }
       
-      const taxTipChanged = editingTax !== expense.tax || editingServiceCharge !== expense.serviceCharge;
-      if (taxTipChanged) {
-        const updatedExpense = await updateExpenseTaxServiceCharge(expense.slug, editingTax, editingServiceCharge);
-        setExpense(updatedExpense);
-      }
-      
       setIsEditMode(false);
     } catch (error) {
       console.error('Failed to save changes:', error);
@@ -206,10 +202,46 @@ const ExpenseView: React.FC = () => {
   const handleCancelEdit = () => {
     if (expense) {
       setEditingItems(expense.items);
-      setEditingTax(expense.tax);
-      setEditingServiceCharge(expense.serviceCharge);
     }
     setIsEditMode(false);
+  };
+
+  const handleSaveTax = async () => {
+    if (!expense?.slug) return;
+    
+    try {
+      const updatedExpense = await updateExpenseTaxServiceCharge(expense.slug, editingTax, expense.serviceCharge);
+      setExpense(updatedExpense);
+      setIsEditingTax(false);
+    } catch (error) {
+      console.error('Failed to save tax:', error);
+    }
+  };
+
+  const handleCancelTax = () => {
+    if (expense) {
+      setEditingTax(expense.tax);
+    }
+    setIsEditingTax(false);
+  };
+
+  const handleSaveServiceCharge = async () => {
+    if (!expense?.slug) return;
+    
+    try {
+      const updatedExpense = await updateExpenseTaxServiceCharge(expense.slug, expense.tax, editingServiceCharge);
+      setExpense(updatedExpense);
+      setIsEditingServiceCharge(false);
+    } catch (error) {
+      console.error('Failed to save service charge:', error);
+    }
+  };
+
+  const handleCancelServiceCharge = () => {
+    if (expense) {
+      setEditingServiceCharge(expense.serviceCharge);
+    }
+    setIsEditingServiceCharge(false);
   };
 
   const handleToggleCompletionStatus = async (personName: string) => {
@@ -288,11 +320,83 @@ const ExpenseView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div className="flex-1">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{expense.restaurantName}</h2>
-          <p className="text-gray-600 text-sm sm:text-base">Paid by {expense.payerName}</p>
+          <p className="text-gray-600 text-sm sm:text-base font-bold">Paid by {expense.payerName}</p>
           <div className="text-sm text-gray-500 space-y-1">
-            <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
-            <p>Tax: ₹{editingTax.toFixed(2)}</p>
-            <p>Service Charge: ₹{editingServiceCharge.toFixed(2)}</p>
+            <p className="font-bold">Subtotal: ₹{subtotal.toFixed(2)}</p>
+            <div className="flex items-center gap-2">
+              {isEditingTax ? (
+                <>
+                  <span className="font-bold">Tax: ₹</span>
+                  <input
+                    type="number"
+                    value={editingTax}
+                    onChange={(e) => setEditingTax(parseFloat(e.target.value) || 0)}
+                    step="0.01"
+                    min="0"
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  />
+                  <button
+                    onClick={handleSaveTax}
+                    className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={handleCancelTax}
+                    className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-xs"
+                  >
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="font-bold">Tax: ₹{editingTax.toFixed(2)}</span>
+                  <button
+                    onClick={() => setIsEditingTax(true)}
+                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                  >
+                    Edit
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {isEditingServiceCharge ? (
+                <>
+                  <span className="font-bold">Service Charge: ₹</span>
+                  <input
+                    type="number"
+                    value={editingServiceCharge}
+                    onChange={(e) => setEditingServiceCharge(parseFloat(e.target.value) || 0)}
+                    step="0.01"
+                    min="0"
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  />
+                  <button
+                    onClick={handleSaveServiceCharge}
+                    className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={handleCancelServiceCharge}
+                    className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-xs"
+                  >
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="font-bold">Service Charge: ₹{editingServiceCharge.toFixed(2)}</span>
+                  <button
+                    onClick={() => setIsEditingServiceCharge(true)}
+                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                  >
+                    Edit
+                  </button>
+                </>
+              )}
+            </div>
             <p className="font-semibold">Total: ₹{totalAmount.toFixed(2)}</p>
           </div>
         </div>
@@ -394,37 +498,7 @@ const ExpenseView: React.FC = () => {
       {/* Edit Mode - Mobile optimized */}
       {isEditMode && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Edit Items & Tax/Service Charge</h3>
-          
-          {/* Tax and Service Charge editing */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tax Amount
-              </label>
-              <input
-                type="number"
-                value={editingTax}
-                onChange={(e) => setEditingTax(parseFloat(e.target.value) || 0)}
-                step="0.01"
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Service Charge Amount
-              </label>
-              <input
-                type="number"
-                value={editingServiceCharge}
-                onChange={(e) => setEditingServiceCharge(parseFloat(e.target.value) || 0)}
-                step="0.01"
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-4">Edit Items</h3>
           
           {/* Add new item form - Mobile optimized */}
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
