@@ -801,7 +801,7 @@ const ExpenseView: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
-                    <div className="text-xl font-bold text-blue-600">
+                    <div className="text-lg font-semibold text-slate-800">
                       ₹{person.totalOwed.toFixed(2)}
                     </div>
                   </div>
@@ -809,29 +809,29 @@ const ExpenseView: React.FC = () => {
                   {/* Breakdown Details - Collapsible */}
                   {isExpanded && (
                     <div className="mt-3 space-y-2 text-sm">
-                      <div className="flex justify-between text-gray-600">
+                      <div className="flex justify-between text-gray-700">
                         <span>Items:</span>
-                        <span>₹{person.subtotal.toFixed(2)}</span>
+                        <span className="font-medium text-gray-800">₹{person.subtotal.toFixed(2)}</span>
                       </div>
                       
                       {person.taxShare > 0 && (
-                        <div className="flex justify-between text-gray-600">
+                        <div className="flex justify-between text-gray-700">
                           <span>Tax:</span>
-                          <span>₹{person.taxShare.toFixed(2)}</span>
+                          <span className="font-medium text-gray-800">₹{person.taxShare.toFixed(2)}</span>
                         </div>
                       )}
                       
                       {person.serviceChargeShare > 0 && (
-                        <div className="flex justify-between text-gray-600">
+                        <div className="flex justify-between text-gray-700">
                           <span>Service Charge:</span>
-                          <span>₹{person.serviceChargeShare.toFixed(2)}</span>
+                          <span className="font-medium text-gray-800">₹{person.serviceChargeShare.toFixed(2)}</span>
                         </div>
                       )}
                       
                       {(person.discountShare || 0) > 0 && (
-                        <div className="flex justify-between text-gray-600">
+                        <div className="flex justify-between text-gray-700">
                           <span>Discount:</span>
-                          <span>-₹{(person.discountShare || 0).toFixed(2)}</span>
+                          <span className="font-medium text-green-600">-₹{(person.discountShare || 0).toFixed(2)}</span>
                         </div>
                       )}
                     </div>
@@ -841,10 +841,10 @@ const ExpenseView: React.FC = () => {
             })}
           
           {/* Total Row */}
-          <div className="p-4 bg-gray-50 border-t-2 border-gray-300">
+          <div className="p-4 bg-slate-50 border-t-2 border-slate-300">
             <div className="flex justify-between items-center">
-              <h4 className="font-bold text-xl text-gray-900">Total</h4>
-              <div className="text-2xl font-bold text-green-600">
+              <h4 className="font-bold text-lg text-slate-900">Total</h4>
+              <div className="text-xl font-bold text-slate-800">
                 ₹{expense.people.reduce((total, person) => total + person.totalOwed, 0).toFixed(2)}
               </div>
             </div>
