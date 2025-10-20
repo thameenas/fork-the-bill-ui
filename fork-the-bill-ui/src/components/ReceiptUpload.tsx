@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createExpenseFromImage } from '../api/client';
+import { usePersonName } from '../hooks/usePersonName';
 
 interface ReceiptUploadProps {
   onExpenseCreated: (slug: string) => void;
@@ -7,7 +8,7 @@ interface ReceiptUploadProps {
 
 const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [payerName, setPayerName] = useState('');
+  const [payerName, setPayerName] = usePersonName();
   const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

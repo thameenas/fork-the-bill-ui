@@ -11,13 +11,14 @@ import {
   updatePersonCompletionStatus,
   addPersonToExpense,
 } from '../api/client';
+import { usePersonName } from '../hooks/usePersonName';
 
 const ExpenseView: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [expense, setExpense] = useState<Expense | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPerson, setSelectedPerson] = useState('');
+  const [selectedPerson, setSelectedPerson] = usePersonName();
   const [showQR, setShowQR] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingItems, setEditingItems] = useState<Item[]>([]);
