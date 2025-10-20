@@ -9,28 +9,6 @@
       }
     }
   ],
-  "functions": {
-    "api/meta/[slug].js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/meta/:slug",
-      "destination": "/api/meta/:slug"
-    },
-    {
-      "source": "/:slug([a-zA-Z0-9_-]+)",
-      "destination": "/api/meta/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": "(?i).*(whatsapp|facebookexternalhit|twitterbot|linkedinbot|telegrambot|skypeuripreview|slackbot|discordbot|googlebot).*"
-        }
-      ]
-    }
-  ],
   "routes": [
     {
       "src": "/favicon.ico",
@@ -51,10 +29,6 @@
       "headers": {
         "cache-control": "s-maxage=31536000,immutable"
       }
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
     },
     {
       "src": "/(.*)",
