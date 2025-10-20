@@ -3,6 +3,8 @@ export interface ItemResponse {
   id: string;
   name: string;
   price: number;
+  quantity: number;
+  totalQuantity: number;
   claimedBy: string[]; // Array of person IDs
 }
 
@@ -21,6 +23,7 @@ export interface PersonResponse {
 export interface ExpenseResponse {
   id: string;
   slug: string;
+  restaurantName: string;
   createdAt: string;
   payerName: string;
   totalAmount: number;
@@ -68,6 +71,8 @@ export interface Item {
   id: string;
   name: string;
   price: number;
+  quantity: number;
+  totalQuantity: number;
   claimedBy: string[]; // Array of person names (for frontend display)
 }
 
@@ -86,6 +91,7 @@ export interface Person {
 export interface Expense {
   id: string;
   slug?: string;
+  restaurantName: string;
   createdAt: string;
   payerName: string;
   totalAmount: number;

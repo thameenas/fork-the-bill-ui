@@ -44,15 +44,15 @@ export const convertExpenseResponseToExpense = (response: ExpenseResponse): Expe
         personIdToName[person.id] = person.name;
     });
 
-    // Convert items with person names instead of IDs
     const items: Item[] = response.items.map(item => ({
         id: item.id,
         name: item.name,
         price: item.price,
+        quantity: item.quantity,
+        totalQuantity: item.totalQuantity,
         claimedBy: item.claimedBy.map(personId => personIdToName[personId] || personId),
     }));
 
-    // Convert people with IDs
     const people: Person[] = response.people.map(person => ({
         id: person.id,
         name: person.name,
@@ -68,6 +68,7 @@ export const convertExpenseResponseToExpense = (response: ExpenseResponse): Expe
     return {
         id: response.id,
         slug: response.slug,
+        restaurantName: response.restaurantName,
         createdAt: response.createdAt,
         payerName: response.payerName,
         totalAmount: response.totalAmount,
