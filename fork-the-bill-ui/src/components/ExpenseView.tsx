@@ -130,7 +130,7 @@ const ExpenseView: React.FC = () => {
     return person.isFinished === undefined ? false : person.isFinished;
   };
 
-  const handleClaimItem = async (itemId: string) => {
+  const handleToggleClaimItem = async (itemId: string) => {
     if (!selectedPerson.trim() || !expense?.slug) return;
     
     setIsClaiming(itemId);
@@ -139,22 +139,36 @@ const ExpenseView: React.FC = () => {
       let currentExpense = expense;
       let person = currentExpense?.people?.find(p => p.name === selectedPerson);
 
-      if (!person?.id) {
-        console.log(`Adding new person "${selectedPerson}" to expense before claiming`);
-        currentExpense = await addPersonToExpense(expense.slug, selectedPerson);
-        person = currentExpense.people.find(p => p.name === selectedPerson);
+      // Check if item is already claimed by the current user
+      const item = currentExpense.items.find(i => i.id === itemId);
+      const isAlreadyClaimed = item?.claimedBy.includes(selectedPerson);
 
+      if (isAlreadyClaimed) {
+        // Unclaim the item
         if (!person?.id) {
-          throw new Error(`Failed to add person "${selectedPerson}" to expense`);
+          throw new Error(`Cannot unclaim: Person "${selectedPerson}" not found in expense`);
+        }
+        const updatedExpense = await unclaimItem(expense.slug, itemId, person.id);
+        setExpense(updatedExpense);
+      } else {
+        // Claim the item
+        if (!person?.id) {
+          console.log(`Adding new person "${selectedPerson}" to expense before claiming`);
+          currentExpense = await addPersonToExpense(expense.slug, selectedPerson);
+          person = currentExpense.people.find(p => p.name === selectedPerson);
+
+          if (!person?.id) {
+            throw new Error(`Failed to add person "${selectedPerson}" to expense`);
+          }
+
+          setExpense(currentExpense);
         }
 
-        setExpense(currentExpense);
+        const updatedExpense = await claimItem(expense.slug, itemId, person.id);
+        setExpense(updatedExpense);
       }
-
-      const updatedExpense = await claimItem(expense.slug, itemId, person.id);
-      setExpense(updatedExpense);
     } catch (error: any) {
-      console.error('Failed to claim item:', error);
+      console.error('Failed to toggle claim item:', error);
     } finally {
       setIsClaiming(null);
     }
@@ -715,23 +729,23 @@ const ExpenseView: React.FC = () => {
               
               {!isEditMode && selectedPerson.trim() && (
                 <button
-                  onClick={() => handleClaimItem(item.id)}
-                  disabled={item.claimedBy.includes(selectedPerson) || isClaiming === item.id}
+                  onClick={() => handleToggleClaimItem(item.id)}
+                  disabled={isClaiming === item.id}
                   className={`px-3 py-1 rounded-md text-sm min-w-[80px] ${
-                    item.claimedBy.includes(selectedPerson)
-                      ? 'bg-green-100 text-green-800 cursor-not-allowed'
-                      : isClaiming === item.id
+                    isClaiming === item.id
                       ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                      : item.claimedBy.includes(selectedPerson)
+                      ? 'bg-red-500 text-white hover:bg-red-600'
                       : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
                 >
                   {isClaiming === item.id ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
-                      Claiming...
+                      {item.claimedBy.includes(selectedPerson) ? 'Unclaiming...' : 'Claiming...'}
                     </div>
                   ) : item.claimedBy.includes(selectedPerson) ? (
-                    'Claimed'
+                    'Unclaim'
                   ) : (
                     'Claim'
                   )}
@@ -749,14 +763,6 @@ const ExpenseView: React.FC = () => {
                       className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
                     >
                       {person}
-                      {person === selectedPerson && (
-                        <button
-                          onClick={() => handleUnclaimItem(item.id, person)}
-                          className="ml-1 text-blue-600 hover:text-blue-800"
-                        >
-                          ×
-                        </button>
-                      )}
                     </span>
                   ))}
                 </div>
@@ -833,6 +839,16 @@ const ExpenseView: React.FC = () => {
                 </div>
               );
             })}
+          
+          {/* Total Row */}
+          <div className="p-4 bg-gray-50 border-t-2 border-gray-300">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-xl text-gray-900">Total</h4>
+              <div className="text-2xl font-bold text-green-600">
+                ₹{expense.people.reduce((total, person) => total + person.totalOwed, 0).toFixed(2)}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       </div>
