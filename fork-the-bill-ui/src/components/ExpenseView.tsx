@@ -12,6 +12,7 @@ import {
   addPersonToExpense,
 } from '../api/client';
 import { usePersonName } from '../hooks/usePersonName';
+import exp from "node:constants";
 
 const ExpenseView: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -326,9 +327,6 @@ const ExpenseView: React.FC = () => {
   }
 
   const shareUrl = `${window.location.origin}/${expense.slug}`;
-  const subtotal = sortedDisplayItems.reduce((sum, item) => sum + item.price, 0);
-  const totalAmount = subtotal + editingTax + editingServiceCharge;
-
   const allPeople = getAllPeople();
   const finishedPeople = allPeople.filter(person => getPersonCompletionStatus(person));
 
@@ -340,7 +338,7 @@ const ExpenseView: React.FC = () => {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{expense.restaurantName}</h2>
           <p className="text-gray-600 text-sm sm:text-base font-bold">Paid by {expense.payerName}</p>
           <div className="text-sm text-gray-500 space-y-1">
-            <p className="font-bold">Subtotal: ₹{subtotal.toFixed(2)}</p>
+            <p className="font-bold">Subtotal: ₹{expense.subtotal.toFixed(2)}</p>
             <div className="flex items-center gap-2">
               {isEditingTax ? (
                 <>
@@ -415,7 +413,7 @@ const ExpenseView: React.FC = () => {
                 </>
               )}
             </div>
-            <p className="font-semibold">Total: ₹{totalAmount.toFixed(2)}</p>
+            <p className="font-semibold">Total: ₹{expense.totalAmount.toFixed(2)}</p>
           </div>
         </div>
         
@@ -714,11 +712,11 @@ const ExpenseView: React.FC = () => {
                   <span>₹{person.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
+                  <span>Tax:</span>
                   <span>₹{person.taxShare.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Service Charge ({((person.subtotal / subtotal) * 100).toFixed(1)}%):</span>
+                  <span>Service Charge:</span>
                   <span>₹{person.serviceChargeShare.toFixed(2)}</span>
                 </div>
               </div>
