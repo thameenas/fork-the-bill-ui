@@ -101,12 +101,6 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
             <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
-
-        {isUploading && (
-          <div className="text-center">
-            <p className="text-sm text-blue-600">Your receipt is being uploaded...</p>
-          </div>
-        )}
       </div>
     </div>
   );

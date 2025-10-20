@@ -72,7 +72,7 @@ export interface Item {
 }
 
 export interface Person {
-  id?: string; // Optional for backward compatibility
+  id?: string;
   name: string;
   itemsClaimed: string[]; // Array of item IDs
   amountOwed: number;

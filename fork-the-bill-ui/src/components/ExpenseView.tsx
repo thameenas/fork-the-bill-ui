@@ -1,97 +1,123 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Expense, Item } from '../types';
 import QRCode from 'react-qr-code';
 import { 
   claimItem, 
   unclaimItem, 
+  getExpense,
+  updateExpenseItems,
+  updateExpenseTaxTip,
+  updatePersonCompletionStatus,
+  addPersonToExpense,
 } from '../api/client';
 
-interface ExpenseViewProps {
-  expense: Expense;
-  onItemClaimed: (itemId: string, personName: string) => void;
-  onItemsUpdated?: (items: Item[]) => void;
-  onTaxTipUpdated?: (tax: number, tip: number) => void;
-  onCompletionStatusUpdated?: (personName: string, isFinished: boolean) => void;
-}
-
-const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onItemsUpdated, onTaxTipUpdated, onCompletionStatusUpdated }) => {
+const ExpenseView: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const [expense, setExpense] = useState<Expense | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedPerson, setSelectedPerson] = useState('');
   const [showQR, setShowQR] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingItems, setEditingItems] = useState<Item[]>(expense.items);
+  const [editingItems, setEditingItems] = useState<Item[]>([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [isClaiming, setIsClaiming] = useState<string | null>(null);
-  const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>(expense.items);
-  const [editingTax, setEditingTax] = useState(expense.tax);
-  const [editingTip, setEditingTip] = useState(expense.tip);
+  const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>([]);
+  const [editingTax, setEditingTax] = useState(0);
+  const [editingTip, setEditingTip] = useState(0);
 
-  // Update real-time updates when expense changes
   useEffect(() => {
-    setRealTimeUpdates(expense.items);
-    setEditingItems(expense.items);
-  }, [expense.items, expense.people]);
+    const loadExpense = async () => {
+      if (!slug) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const loadedExpense = await getExpense(slug);
+        setExpense(loadedExpense);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load expense');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExpense();
+  }, [slug]);
+
+  useEffect(() => {
+    if (expense) {
+      setRealTimeUpdates(expense.items);
+      setEditingItems(expense.items);
+      setEditingTax(expense.tax);
+      setEditingTip(expense.tip);
+    }
+  }, [expense]);
 
 
-  // Use real-time updates when not in edit mode
   const displayItems = isEditMode ? editingItems : realTimeUpdates;
 
   const getAllPeople = () => {
-    return expense.people.map(person => person.name);
+    return expense?.people?.map(person => person.name) || [];
   };
 
-  // Get completion status from expense.people
   const getPersonCompletionStatus = (personName: string) => {
-    const person = expense.people.find(p => p.name === personName);
+    const person = expense?.people?.find(p => p.name === personName);
 
     // If person doesn't exist, return false (not finished)
     if (!person) {
-      console.log(`🎯 ExpenseView: Person "${personName}" not found in expense, returning false`);
       return false;
     }
-
-    // If person exists but isFinished is undefined, return false
-    const isFinished = person.isFinished === undefined ? false : person.isFinished;
-    console.log(`🎯 ExpenseView: getPersonCompletionStatus(${personName}) = ${isFinished}`);
-    return isFinished;
+    
+    return person.isFinished === undefined ? false : person.isFinished;
   };
 
   const handleClaimItem = async (itemId: string) => {
-    if (!selectedPerson.trim() || !expense.slug) return;
-
+    if (!selectedPerson.trim() || !expense?.slug) return;
+    
     setIsClaiming(itemId);
-
+    
     try {
-      const updatedExpense = await claimItem(expense.slug, itemId, selectedPerson);
+      let currentExpense = expense;
+      let person = currentExpense?.people?.find(p => p.name === selectedPerson);
 
-      // Update local state with the response
-      setRealTimeUpdates(updatedExpense.items);
-      setEditingItems(updatedExpense.items);
-      onItemClaimed(itemId, selectedPerson);
+      if (!person?.id) {
+        console.log(`Adding new person "${selectedPerson}" to expense before claiming`);
+        currentExpense = await addPersonToExpense(expense.slug, selectedPerson);
+        person = currentExpense.people.find(p => p.name === selectedPerson);
 
+        if (!person?.id) {
+          throw new Error(`Failed to add person "${selectedPerson}" to expense`);
+        }
+
+        setExpense(currentExpense);
+      }
+
+      const updatedExpense = await claimItem(expense.slug, itemId, person.id);
+      setExpense(updatedExpense);
     } catch (error: any) {
-      const errorMsg = error?.message || 'Failed to claim item. Please try again.';
-      console.log('❌ Error claiming item:', errorMsg);
+      console.error('Failed to claim item:', error);
     } finally {
       setIsClaiming(null);
     }
   };
 
   const handleUnclaimItem = async (itemId: string, personName: string) => {
-    if (!expense.slug) return;
+    if (!expense?.slug) return;
 
     try {
-      const updatedExpense = await unclaimItem(expense.slug, itemId, personName);
+      const person = expense?.people?.find(p => p.name === personName);
+      
+      if (!person?.id) {
+        throw new Error(`Cannot unclaim: Person "${personName}" not found in expense`);
+      }
 
-      // Update local state with the response
-      setRealTimeUpdates(updatedExpense.items);
-      setEditingItems(updatedExpense.items);
-
-      // Notify parent component to refresh expense data
-      onItemClaimed(itemId, personName);
+      const updatedExpense = await unclaimItem(expense.slug, itemId, person.id);
+      setExpense(updatedExpense);
     } catch (error: any) {
-      const errorMsg = error?.message || 'Failed to unclaim item. Please try again.';
-      console.log('❌ Error unclaiming item:', errorMsg);
+      console.error('Failed to unclaim item:', error);
     }
   };
 
@@ -107,6 +133,7 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     setEditingItems(prev => prev.filter(item => item.id !== itemId));
   };
 
+  //Todo: Fix contract here
   const handleAddItem = () => {
     if (!newItemName.trim() || !newItemPrice.trim()) return;
 
@@ -124,18 +151,21 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   };
 
   const handleSaveChanges = async () => {
-    if (!expense.slug) return;
-
+    if (!expense?.slug) return;
+    
     try {
-      if (onItemsUpdated) {
-        onItemsUpdated(editingItems);
+      const itemsChanged = JSON.stringify(editingItems) !== JSON.stringify(expense.items);
+      if (itemsChanged) {
+        const updatedExpense = await updateExpenseItems(expense.slug, editingItems);
+        setExpense(updatedExpense);
       }
-
-      if (onTaxTipUpdated && (editingTax !== expense.tax || editingTip !== expense.tip)) {
-        onTaxTipUpdated(editingTax, editingTip);
+      
+      const taxTipChanged = editingTax !== expense.tax || editingTip !== expense.tip;
+      if (taxTipChanged) {
+        const updatedExpense = await updateExpenseTaxTip(expense.slug, editingTax, editingTip);
+        setExpense(updatedExpense);
       }
-
-      setRealTimeUpdates(editingItems);
+      
       setIsEditMode(false);
     } catch (error) {
       console.error('Failed to save changes:', error);
@@ -143,20 +173,23 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
   };
 
   const handleCancelEdit = () => {
-    setEditingItems(expense.items);
-    setEditingTax(expense.tax);
-    setEditingTip(expense.tip);
+    if (expense) {
+      setEditingItems(expense.items);
+      setEditingTax(expense.tax);
+      setEditingTip(expense.tip);
+    }
     setIsEditMode(false);
   };
 
   const handleToggleCompletionStatus = async (personName: string) => {
-    if (!expense.slug || !onCompletionStatusUpdated) return;
-
+    if (!expense?.slug) return;
+    
     try {
       const currentStatus = getPersonCompletionStatus(personName);
       const newStatus = !currentStatus;
-
-      onCompletionStatusUpdated(personName, newStatus);
+      
+      const updatedExpense = await updatePersonCompletionStatus(expense.slug, personName, newStatus);
+      setExpense(updatedExpense);
     } catch (error) {
       console.error('Failed to update completion status:', error);
     }
@@ -167,16 +200,60 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
     return item.claimedBy.length > 0 ? item.price / item.claimedBy.length : item.price;
   };
 
-  const shareUrl = `${window.location.origin}/${expense.slug || expense.id}`;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading expense...</p>
+        </div>
+      </div>
+    );
+  }
+
+  //Todo: Verify if this is correct
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!expense) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Expense not found</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const shareUrl = `${window.location.origin}/${expense.slug}`;
   const subtotal = displayItems.reduce((sum, item) => sum + item.price, 0);
   const totalAmount = subtotal + editingTax + editingTip;
 
-  // Get completion status
   const allPeople = getAllPeople();
   const finishedPeople = allPeople.filter(person => getPersonCompletionStatus(person));
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div className="flex-1">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Restaurant Bill</h2>
@@ -507,6 +584,7 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );
