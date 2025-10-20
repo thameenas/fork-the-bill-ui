@@ -61,6 +61,7 @@ export const convertExpenseResponseToExpense = (response: ExpenseResponse): Expe
         subtotal: person.subtotal,
         taxShare: person.taxShare,
         serviceChargeShare: person.serviceChargeShare,
+        discountShare: person.discountShare || 0,
         totalOwed: person.totalOwed,
         isFinished: person.finished,
     }));
@@ -75,6 +76,7 @@ export const convertExpenseResponseToExpense = (response: ExpenseResponse): Expe
         subtotal: response.subtotal,
         tax: response.tax,
         serviceCharge: response.serviceCharge,
+        discount: response.discount || 0,
         items,
         people,
     };
@@ -104,6 +106,7 @@ export const convertExpenseToExpenseRequest = (expense: Expense): ExpenseRequest
         subtotal: person.subtotal,
         taxShare: person.taxShare,
         serviceChargeShare: person.serviceChargeShare,
+        discountShare: person.discountShare || 0,
         totalOwed: person.totalOwed,
         isFinished: person.isFinished,
     }));
@@ -114,6 +117,7 @@ export const convertExpenseToExpenseRequest = (expense: Expense): ExpenseRequest
         subtotal: expense.subtotal,
         tax: expense.tax,
         serviceCharge: expense.serviceCharge,
+        discount: expense.discount || 0,
         items,
         people,
     };
@@ -300,6 +304,7 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
             subtotal: currentExpense.subtotal,
             tax: currentExpense.tax,
             serviceCharge: currentExpense.serviceCharge,
+            discount: currentExpense.discount || 0,
             items: itemRequests,
             people: currentExpense.people.map(person => ({
                 name: person.name,
@@ -308,6 +313,7 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
                 subtotal: person.subtotal,
                 taxShare: person.taxShare,
                 serviceChargeShare: person.serviceChargeShare,
+                discountShare: person.discountShare || 0,
                 totalOwed: person.totalOwed,
                 isFinished: person.isFinished,
             })),
@@ -320,7 +326,7 @@ export const updateExpenseItems = async (slug: string, items: Item[]): Promise<E
     }
 };
 
-export const updateExpenseTaxServiceCharge = async (slug: string, tax: number, serviceCharge: number): Promise<Expense> => {
+export const updateExpenseTaxServiceCharge = async (slug: string, tax: number, serviceCharge: number, discount?: number): Promise<Expense> => {
     try {
         // Get current expense
         const currentExpense = await getExpense(slug);
@@ -328,10 +334,11 @@ export const updateExpenseTaxServiceCharge = async (slug: string, tax: number, s
         // Create updated expense request
         const expenseRequest: ExpenseRequest = {
             payerName: currentExpense.payerName,
-            totalAmount: currentExpense.subtotal + tax + serviceCharge,
+            totalAmount: currentExpense.subtotal + tax + serviceCharge - (discount !== undefined ? discount : (currentExpense.discount || 0)),
             subtotal: currentExpense.subtotal,
             tax,
             serviceCharge,
+            discount: discount !== undefined ? discount : (currentExpense.discount || 0),
             items: currentExpense.items.map(item => ({
                 id: item.id,
                 name: item.name,
@@ -344,6 +351,7 @@ export const updateExpenseTaxServiceCharge = async (slug: string, tax: number, s
                 subtotal: person.subtotal,
                 taxShare: person.taxShare,
                 serviceChargeShare: person.serviceChargeShare,
+                discountShare: person.discountShare || 0,
                 totalOwed: person.totalOwed,
                 isFinished: person.isFinished,
             })),
@@ -352,6 +360,18 @@ export const updateExpenseTaxServiceCharge = async (slug: string, tax: number, s
         return await updateExpense(slug, expenseRequest);
     } catch (error) {
         console.error('Failed to update expense tax/serviceCharge:', error);
+        throw error;
+    }
+};
+
+export const updateExpenseDiscount = async (slug: string, discount: number): Promise<Expense> => {
+    try {
+        // Get current expense
+        const currentExpense = await getExpense(slug);
+
+        return await updateExpenseTaxServiceCharge(slug, currentExpense.tax, currentExpense.serviceCharge, discount);
+    } catch (error) {
+        console.error('Failed to update expense discount:', error);
         throw error;
     }
 };

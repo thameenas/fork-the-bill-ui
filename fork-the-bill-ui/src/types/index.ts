@@ -16,6 +16,7 @@ export interface PersonResponse {
   subtotal: number;
   taxShare: number;
   serviceChargeShare: number;
+  discountShare: number;
   totalOwed: number;
   finished: boolean; // API uses 'finished' instead of 'isFinished'
 }
@@ -30,6 +31,7 @@ export interface ExpenseResponse {
   subtotal: number;
   tax: number;
   serviceCharge: number;
+  discount: number;
   items: ItemResponse[];
   people: PersonResponse[];
 }
@@ -48,6 +50,7 @@ export interface PersonRequest {
   subtotal?: number;
   taxShare?: number;
   serviceChargeShare?: number;
+  discountShare?: number;
   totalOwed?: number;
   isFinished?: boolean;
 }
@@ -58,6 +61,7 @@ export interface ExpenseRequest {
   subtotal: number;
   tax: number;
   serviceCharge: number;
+  discount: number;
   items: ItemRequest[];
   people?: PersonRequest[];
 }
@@ -84,6 +88,7 @@ export interface Person {
   subtotal: number;
   taxShare: number;
   serviceChargeShare: number;
+  discountShare: number;
   totalOwed: number;
   isFinished: boolean;
 }
@@ -98,6 +103,7 @@ export interface Expense {
   subtotal: number;
   tax: number;
   serviceCharge: number;
+  discount: number;
   items: Item[];
   people: Person[];
 }

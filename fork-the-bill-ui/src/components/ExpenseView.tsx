@@ -8,6 +8,7 @@ import {
   getExpense,
   updateExpenseItems,
   updateExpenseTaxServiceCharge,
+  updateExpenseDiscount,
   updatePersonCompletionStatus,
   addPersonToExpense,
 } from '../api/client';
@@ -30,8 +31,10 @@ const ExpenseView: React.FC = () => {
   const [realTimeUpdates, setRealTimeUpdates] = useState<Item[]>([]);
   const [editingTax, setEditingTax] = useState(0);
   const [editingServiceCharge, setEditingServiceCharge] = useState(0);
+  const [editingDiscount, setEditingDiscount] = useState(0);
   const [isEditingTax, setIsEditingTax] = useState(false);
   const [isEditingServiceCharge, setIsEditingServiceCharge] = useState(false);
+  const [isEditingDiscount, setIsEditingDiscount] = useState(false);
   const [expandedPersons, setExpandedPersons] = useState<Set<string>>(new Set());
 
   const togglePersonExpansion = (personName: string) => {
@@ -71,6 +74,7 @@ const ExpenseView: React.FC = () => {
       setEditingItems(expense.items);
       setEditingTax(expense.tax);
       setEditingServiceCharge(expense.serviceCharge);
+      setEditingDiscount(expense.discount || 0);
     }
   }, [expense]);
 
@@ -276,6 +280,25 @@ const ExpenseView: React.FC = () => {
     setIsEditingServiceCharge(false);
   };
 
+  const handleSaveDiscount = async () => {
+    if (!expense?.slug) return;
+    
+    try {
+      const updatedExpense = await updateExpenseDiscount(expense.slug, editingDiscount);
+      setExpense(updatedExpense);
+      setIsEditingDiscount(false);
+    } catch (error) {
+      console.error('Failed to save discount:', error);
+    }
+  };
+
+  const handleCancelDiscount = () => {
+    if (expense) {
+      setEditingDiscount(expense.discount || 0);
+    }
+    setIsEditingDiscount(false);
+  };
+
   const handleToggleCompletionStatus = async (personName: string) => {
     if (!expense?.slug) return;
     
@@ -419,6 +442,43 @@ const ExpenseView: React.FC = () => {
                   <span className="font-bold">Service Charge: ₹{editingServiceCharge.toFixed(2)}</span>
                   <button
                     onClick={() => setIsEditingServiceCharge(true)}
+                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                  >
+                    Edit
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {isEditingDiscount ? (
+                <>
+                  <span className="font-bold">Discount: ₹</span>
+                  <input
+                    type="number"
+                    value={editingDiscount}
+                    onChange={(e) => setEditingDiscount(parseFloat(e.target.value) || 0)}
+                    step="0.01"
+                    min="0"
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  />
+                  <button
+                    onClick={handleSaveDiscount}
+                    className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={handleCancelDiscount}
+                    className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-xs"
+                  >
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="font-bold">Discount: ₹{(editingDiscount || 0).toFixed(2)}</span>
+                  <button
+                    onClick={() => setIsEditingDiscount(true)}
                     className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
                   >
                     Edit
@@ -760,6 +820,13 @@ const ExpenseView: React.FC = () => {
                         <div className="flex justify-between text-gray-600">
                           <span>Service Charge:</span>
                           <span>₹{person.serviceChargeShare.toFixed(2)}</span>
+                        </div>
+                      )}
+                      
+                      {(person.discountShare || 0) > 0 && (
+                        <div className="flex justify-between text-gray-600">
+                          <span>Discount:</span>
+                          <span>-₹{(person.discountShare || 0).toFixed(2)}</span>
                         </div>
                       )}
                     </div>

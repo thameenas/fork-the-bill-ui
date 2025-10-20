@@ -11,5 +11,6 @@ export {
   markPersonAsPending,
   updateExpenseItems,
   updateExpenseTaxServiceCharge,
+  updateExpenseDiscount,
   updatePersonCompletionStatus,
 } from './client';
