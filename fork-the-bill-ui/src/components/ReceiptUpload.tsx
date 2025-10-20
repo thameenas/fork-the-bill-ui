@@ -18,7 +18,6 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
     setError(null);
     
     try {
-      // Use real AI-powered receipt processing
       const newExpense = await createExpenseFromImage(file, payerName.trim());
       onExpenseCreated(newExpense.slug || newExpense.id);
     } catch (error: any) {
@@ -105,7 +104,7 @@ const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onExpenseCreated }) => {
 
         {isUploading && (
           <div className="text-center">
-            <p className="text-sm text-blue-600">AI is analyzing your receipt...</p>
+            <p className="text-sm text-blue-600">Your receipt is being uploaded...</p>
           </div>
         )}
       </div>

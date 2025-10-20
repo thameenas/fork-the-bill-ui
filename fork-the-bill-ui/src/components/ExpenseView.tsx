@@ -28,7 +28,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   // Update real-time updates when expense changes
   useEffect(() => {
-    console.log('🎯 ExpenseView: Expense prop changed, people:', expense.people.map(p => ({ name: p.name, isFinished: p.isFinished })));
     setRealTimeUpdates(expense.items);
     setEditingItems(expense.items);
   }, [expense.items, expense.people]);
@@ -50,7 +49,7 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
       console.log(`🎯 ExpenseView: Person "${personName}" not found in expense, returning false`);
       return false;
     }
-    
+
     // If person exists but isFinished is undefined, return false
     const isFinished = person.isFinished === undefined ? false : person.isFinished;
     console.log(`🎯 ExpenseView: getPersonCompletionStatus(${personName}) = ${isFinished}`);
@@ -59,26 +58,18 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   const handleClaimItem = async (itemId: string) => {
     if (!selectedPerson.trim() || !expense.slug) return;
-    
+
     setIsClaiming(itemId);
-    
+
     try {
-      console.log('🎯 About to call claimItem API...');
       const updatedExpense = await claimItem(expense.slug, itemId, selectedPerson);
-      console.log('🎯 claimItem API call succeeded, got response:', updatedExpense);
-      
+
       // Update local state with the response
       setRealTimeUpdates(updatedExpense.items);
       setEditingItems(updatedExpense.items);
       onItemClaimed(itemId, selectedPerson);
-      
-      const item = updatedExpense.items.find(i => i.id === itemId);
-      if (item && item.claimedBy.includes(selectedPerson)) {
-        console.log('🎯 Successfully claimed item:', item.name);
-      }
+
     } catch (error: any) {
-      console.error('❌ Failed to claim item:', error);
-      
       const errorMsg = error?.message || 'Failed to claim item. Please try again.';
       console.log('❌ Error claiming item:', errorMsg);
     } finally {
@@ -88,33 +79,25 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   const handleUnclaimItem = async (itemId: string, personName: string) => {
     if (!expense.slug) return;
-    
+
     try {
-      // Use real API to unclaim item
       const updatedExpense = await unclaimItem(expense.slug, itemId, personName);
-      
+
       // Update local state with the response
       setRealTimeUpdates(updatedExpense.items);
       setEditingItems(updatedExpense.items);
-      
+
       // Notify parent component to refresh expense data
       onItemClaimed(itemId, personName);
-      
-      const item = updatedExpense.items.find(i => i.id === itemId);
-      if (item) {
-        console.log('🎯 Successfully unclaimed item:', item.name);
-      }
     } catch (error: any) {
-      console.error('Failed to unclaim item:', error);
-      
       const errorMsg = error?.message || 'Failed to unclaim item. Please try again.';
       console.log('❌ Error unclaiming item:', errorMsg);
     }
   };
 
   const handleEditItem = (itemId: string, field: 'name' | 'price', value: string) => {
-    setEditingItems(prev => prev.map(item => 
-      item.id === itemId 
+    setEditingItems(prev => prev.map(item =>
+      item.id === itemId
         ? { ...item, [field]: field === 'price' ? parseFloat(value) || 0 : value }
         : item
     ));
@@ -126,14 +109,14 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   const handleAddItem = () => {
     if (!newItemName.trim() || !newItemPrice.trim()) return;
-    
+
     const newItem: Item = {
       id: `item-${Date.now()}`,
       name: newItemName.trim(),
       price: parseFloat(newItemPrice) || 0,
       claimedBy: []
     };
-    
+
     setEditingItems(prev => [...prev, newItem]);
     setRealTimeUpdates(prev => [...prev, newItem]);
     setNewItemName('');
@@ -142,21 +125,18 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   const handleSaveChanges = async () => {
     if (!expense.slug) return;
-    
+
     try {
-      // Update items if they changed - let parent handle the API call
       if (onItemsUpdated) {
         onItemsUpdated(editingItems);
       }
-      
-      // Update tax/tip if they changed - let parent handle the API call
+
       if (onTaxTipUpdated && (editingTax !== expense.tax || editingTip !== expense.tip)) {
         onTaxTipUpdated(editingTax, editingTip);
       }
-      
+
       setRealTimeUpdates(editingItems);
       setIsEditMode(false);
-      console.log('🎯 Changes saved successfully');
     } catch (error) {
       console.error('Failed to save changes:', error);
     }
@@ -171,11 +151,11 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   const handleToggleCompletionStatus = async (personName: string) => {
     if (!expense.slug || !onCompletionStatusUpdated) return;
-    
+
     try {
       const currentStatus = getPersonCompletionStatus(personName);
       const newStatus = !currentStatus;
-      
+
       onCompletionStatusUpdated(personName, newStatus);
     } catch (error) {
       console.error('Failed to update completion status:', error);
@@ -197,7 +177,6 @@ const ExpenseView: React.FC<ExpenseViewProps> = ({ expense, onItemClaimed, onIte
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
-      {/* Header - Mobile optimized */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div className="flex-1">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Restaurant Bill</h2>
