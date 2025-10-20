@@ -13,7 +13,6 @@ import {
   addPersonToExpense,
 } from '../api/client';
 import { usePersonName } from '../hooks/usePersonName';
-import exp from "node:constants";
 
 const ExpenseView: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();

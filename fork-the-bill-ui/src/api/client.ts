@@ -343,6 +343,8 @@ export const updateExpenseTaxServiceCharge = async (slug: string, tax: number, s
                 id: item.id,
                 name: item.name,
                 price: item.price,
+                quantity: item.quantity,
+                totalQuantity: item.totalQuantity
             })),
             people: currentExpense.people.map(person => ({
                 name: person.name,
