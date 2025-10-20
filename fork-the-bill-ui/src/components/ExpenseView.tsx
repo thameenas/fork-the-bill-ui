@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Expense, Item } from '../types';
 import QRCode from 'react-qr-code';
-import { useMetaTags } from '../hooks/useMetaTags';
 import { 
   claimItem, 
   unclaimItem, 
@@ -37,22 +37,6 @@ const ExpenseView: React.FC = () => {
   const [isEditingDiscount, setIsEditingDiscount] = useState(false);
   const [expandedPersons, setExpandedPersons] = useState<Set<string>>(new Set());
   const [linkCopied, setLinkCopied] = useState(false);
-
-  // Set dynamic meta tags for WhatsApp/social sharing
-  const shareUrl = `${window.location.origin}/${slug}`;
-  useMetaTags({
-    title: expense ? `${expense.restaurantName} - Fork the bill` : 'Fork the Bill',
-    description: expense 
-      ? `Split the bill from ${expense.restaurantName}. Total: ₹${expense.totalAmount.toFixed(2)} paid by ${expense.payerName}. Join to claim your items!`
-      : 'Easily split restaurant bills with friends!',
-    ogTitle: expense ? `${expense.restaurantName} - Fork the bill` : 'Fork the Bill',
-    ogDescription: expense 
-      ? `Split the bill from ${expense.restaurantName}. Total: ₹${expense.totalAmount.toFixed(2)} paid by ${expense.payerName}. Join to claim your items!`
-      : 'Easily split restaurant bills with friends!',
-    ogUrl: shareUrl,
-    ogImage: `${window.location.origin}/logo512.png`,
-    ogType: 'website'
-  });
 
   const togglePersonExpansion = (personName: string) => {
     setExpandedPersons(prev => {
@@ -376,12 +360,25 @@ const ExpenseView: React.FC = () => {
     );
   }
 
-  const currentShareUrl = `${window.location.origin}/${expense.slug}`;
+  const shareUrl = `${window.location.origin}/${expense.slug}`;
   const allPeople = getAllPeople();
   const finishedPeople = allPeople.filter(person => getPersonCompletionStatus(person));
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <>
+      <Helmet>
+        <title>{expense.restaurantName} - Fork the bill</title>
+        <meta name="description" content={`Split the bill from ${expense.restaurantName}. Total: ₹${expense.totalAmount.toFixed(2)} paid by ${expense.payerName}. Join to claim your items!`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={shareUrl} />
+        <meta property="og:title" content={`${expense.restaurantName} - Fork the bill`} />
+        <meta property="og:description" content={`Split the bill from ${expense.restaurantName}. Total: ₹${expense.totalAmount.toFixed(2)} paid by ${expense.payerName}. Join to claim your items!`} />
+        <meta property="og:image" content={`${window.location.origin}/logo512.png`} />
+      </Helmet>
+      
+      <div className="min-h-screen bg-gray-100">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div className="flex-1">
@@ -521,7 +518,7 @@ const ExpenseView: React.FC = () => {
           </button>
           <button
             onClick={() => {
-              navigator.clipboard.writeText(currentShareUrl);
+              navigator.clipboard.writeText(shareUrl);
               setLinkCopied(true);
               setTimeout(() => setLinkCopied(false), 2000);
             }}
@@ -536,7 +533,7 @@ const ExpenseView: React.FC = () => {
       {/* QR Code - Mobile optimized */}
       {showQR && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center">
-          <QRCode value={currentShareUrl} size={128} className="mx-auto mb-2" />
+          <QRCode value={shareUrl} size={128} className="mx-auto mb-2" />
           <p className="text-sm text-gray-600">Scan to join this bill</p>
         </div>
       )}
@@ -858,6 +855,7 @@ const ExpenseView: React.FC = () => {
       </div>
       </div>
     </div>
+    </>
   );
 };
 
