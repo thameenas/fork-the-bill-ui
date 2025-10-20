@@ -176,7 +176,8 @@ const ExpenseView: React.FC = () => {
     if (!newItemName.trim() || !newItemPrice.trim() || !newItemQuantity.trim()) return;
 
     const quantity = parseInt(newItemQuantity) || 1;
-    const price = parseFloat(newItemPrice) || 0;
+    const totalPrice = parseFloat(newItemPrice) || 0;
+    const pricePerItem = totalPrice / quantity; // Divide total price by quantity
     const name = newItemName.trim();
     
     // Create multiple items if quantity > 1
@@ -185,7 +186,7 @@ const ExpenseView: React.FC = () => {
       const newItem: Item = {
         id: `new-${Date.now()}-${i}`, // Local UI identifier, not sent to API
         name: name,
-        price: price,
+        price: pricePerItem, // Each item gets the divided price
         quantity: 1,
         totalQuantity: quantity,
         claimedBy: []
