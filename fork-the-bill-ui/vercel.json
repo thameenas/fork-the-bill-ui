@@ -31,6 +31,17 @@
       }
     },
     {
+      "src": "/([^/]+)$",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|linkedinbot|slackbot|telegrambot|discordbot).*"
+        }
+      ],
+      "dest": "/api/meta/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
