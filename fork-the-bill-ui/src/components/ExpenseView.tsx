@@ -175,23 +175,6 @@ const ExpenseView: React.FC = () => {
     }
   };
 
-  const handleUnclaimItem = async (itemId: string, personName: string) => {
-    if (!expense?.slug) return;
-
-    try {
-      const person = expense?.people?.find(p => p.name === personName);
-      
-      if (!person?.id) {
-        throw new Error(`Cannot unclaim: Person "${personName}" not found in expense`);
-      }
-
-      const updatedExpense = await unclaimItem(expense.slug, itemId, person.id);
-      setExpense(updatedExpense);
-    } catch (error: any) {
-      console.error('Failed to unclaim item:', error);
-    }
-  };
-
   const handleEditItem = (itemId: string, field: 'name' | 'price', value: string) => {
     setEditingItems(prev => prev.map(item =>
       item.id === itemId
