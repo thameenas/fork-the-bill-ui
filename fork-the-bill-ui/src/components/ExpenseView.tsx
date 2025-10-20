@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Expense, Item } from '../types';
 import QRCode from 'react-qr-code';
+import { useMetaTags } from '../hooks/useMetaTags';
 import { 
   claimItem, 
   unclaimItem, 
@@ -37,6 +38,21 @@ const ExpenseView: React.FC = () => {
   const [expandedPersons, setExpandedPersons] = useState<Set<string>>(new Set());
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Set dynamic meta tags for WhatsApp/social sharing
+  const shareUrl = `${window.location.origin}/${slug}`;
+  useMetaTags({
+    title: expense ? `${expense.restaurantName} - Fork the bill` : 'Fork the Bill',
+    description: expense 
+      ? `Split the bill from ${expense.restaurantName}. Total: ₹${expense.totalAmount.toFixed(2)} paid by ${expense.payerName}. Join to claim your items!`
+      : 'Easily split restaurant bills with friends!',
+    ogTitle: expense ? `${expense.restaurantName} - Fork the bill` : 'Fork the Bill',
+    ogDescription: expense 
+      ? `Split the bill from ${expense.restaurantName}. Total: ₹${expense.totalAmount.toFixed(2)} paid by ${expense.payerName}. Join to claim your items!`
+      : 'Easily split restaurant bills with friends!',
+    ogUrl: shareUrl,
+    ogImage: `${window.location.origin}/logo512.png`,
+    ogType: 'website'
+  });
 
   const togglePersonExpansion = (personName: string) => {
     setExpandedPersons(prev => {
@@ -364,21 +380,8 @@ const ExpenseView: React.FC = () => {
   const allPeople = getAllPeople();
   const finishedPeople = allPeople.filter(person => getPersonCompletionStatus(person));
 
-  // React 19 native metadata support - these will be hoisted to document head
-  const title = `${expense.restaurantName} - Fork the bill`;
-  const description = `Split the bill from ${expense.restaurantName}. Total: ₹${expense.totalAmount.toFixed(2)} paid by ${expense.payerName}. Join to claim your items!`;
-
   return (
-    <>
-      {/* React 19 native metadata tags - automatically hoisted to <head> */}
-      <title>{title}</title>
-      <meta name="description" content={description} />
-      <meta property="og:type" content="website" />
-      <meta property="og:url" content={currentShareUrl} />
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-
-      <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div className="flex-1">
@@ -855,7 +858,6 @@ const ExpenseView: React.FC = () => {
       </div>
       </div>
     </div>
-    </>
   );
 };
 
