@@ -35,6 +35,7 @@ const ExpenseView: React.FC = () => {
   const [isEditingServiceCharge, setIsEditingServiceCharge] = useState(false);
   const [isEditingDiscount, setIsEditingDiscount] = useState(false);
   const [expandedPersons, setExpandedPersons] = useState<Set<string>>(new Set());
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const togglePersonExpansion = (personName: string) => {
     setExpandedPersons(prev => {
@@ -519,10 +520,14 @@ const ExpenseView: React.FC = () => {
             {showQR ? 'Hide QR' : 'Show QR'}
           </button>
           <button
-            onClick={() => navigator.clipboard.writeText(shareUrl)}
+            onClick={() => {
+              navigator.clipboard.writeText(shareUrl);
+              setLinkCopied(true);
+              setTimeout(() => setLinkCopied(false), 2000);
+            }}
             className="px-3 py-2 sm:px-4 sm:py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
           >
-            Copy Link
+            {linkCopied ? 'Link copied!' : 'Copy Link'}
           </button>
         </div>
       </div>
